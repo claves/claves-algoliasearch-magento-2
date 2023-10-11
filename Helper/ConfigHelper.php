@@ -143,6 +143,7 @@ class ConfigHelper
     public const ENHANCED_QUEUE_ARCHIVE = 'algoliasearch_advanced/queue/enhanced_archive';
     public const NUMBER_OF_ELEMENT_BY_PAGE = 'algoliasearch_advanced/queue/number_of_element_by_page';
     public const ARCHIVE_LOG_CLEAR_LIMIT = 'algoliasearch_advanced/queue/archive_clear_limit';
+    public const MAX_VIRTUAL_REPLICA_COUNT = 50;
 
     /**
      * @var Magento\Framework\App\Config\ScopeConfigInterface
@@ -1010,8 +1011,9 @@ class ConfigHelper
         $currency = $this->getCurrencyCode($storeId);
         $attributesToAdd = [];
         $defaultVirtualReplicaEnabled = $this->useVirtualReplica($storeId);
+        $virtualReplicaCount = 0;
         foreach ($attrs as $key => $attr) {
-            if ($defaultVirtualReplicaEnabled || (isset($attr['virtualReplica']) && $attr['virtualReplica'])){
+            if ($virtualReplicaCount < self::MAX_VIRTUAL_REPLICA_COUNT && ($defaultVirtualReplicaEnabled || (isset($attr['virtualReplica']) && $attr['virtualReplica']))){
                 $virtualReplica = 1;
             } else {
                 $virtualReplica = 0;
@@ -1050,6 +1052,7 @@ class ConfigHelper
                         'custom',
                     ];
                     $attributesToAdd[$newAttr['sort']][] = $newAttr;
+                    $virtualReplicaCount++;
                 }
             } elseif ($attr['attribute'] === 'price') {
                 $indexName = $originalIndexName . '_' . $attr['attribute'] . '_' . 'default' . '_' . $attr['sort'];
@@ -1075,6 +1078,7 @@ class ConfigHelper
                     'exact',
                     'custom',
                 ];
+                $virtualReplicaCount++;
             }
         }
         $attrsToReturn = [];
