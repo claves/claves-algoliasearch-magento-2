@@ -92,6 +92,27 @@
     <table name="sales_order_item" resource="sales" engine="innodb" comment="Sales Flat Order Item">
         <column xsi:type="text" name="algoliasearch_query_param" nullable="true" comment="Reference for Algolia analytics order conversion"/>
     </table>
+    <table name="algoliasearch_category_versions" resource="default" engine="innodb" comment="Algolia change log for category updates">
+        <column xsi:type="int" name="version_id" unsigned="false" nullable="false" identity="true" comment="Version Id"/>
+        <column xsi:type="int" name="entity_id" unsigned="true" nullable="false" identity="false" comment="Category Entity Id"/>
+        <column xsi:type="int" name="store_id" unsigned="true" nullable="false" identity="false" comment="Store Id"/>
+        <column xsi:type="text" name="old_value" nullable="false" comment="Old Value"/>
+        <column xsi:type="text" name="new_value" nullable="false" comment="New Value"/>
+        <column xsi:type="datetime" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
+        <column xsi:type="datetime" name="updated_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP" comment="Updated At"/>
+        <column xsi:type="datetime" name="indexed_at" nullable="true" comment="Indexed At"/>
+        <column xsi:type="datetime" name="resolved_at" nullable="true" comment="Resolved At"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="version_id"/>
+        </constraint>
+        <index referenceId="ALGOLIA_ALGOLIASEARCH_CATEGORY_VERSIONS_CREATED_AT" indexType="btree">
+            <column name="created_at"/>
+        </index>
+        <index referenceId="ALGOLIA_ALGOLIASEARCH_CATEGORY_VERSIONS_UPDATED_AT" indexType="btree">
+            <column name="updated_at"/>
+        </index>
+    </table>
+
 </schema>
 
 

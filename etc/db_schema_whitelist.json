@@ -98,5 +98,25 @@
         "column": {
             "algoliasearch_query_param": true
         }
+    },
+    "algoliasearch_category_versions": {
+        "column": {
+            "version_id": true,
+            "entity_id": true,
+            "store_id": true,
+            "old_value": true,
+            "new_value": true,
+            "created_at": true,
+            "updated_at": true,
+            "indexed_at": true,
+            "resolved_at": true
+        },
+        "index": {
+            "ALGOLIASEARCH_CATEGORY_VERSIONS_CREATED_AT": true,
+            "ALGOLIASEARCH_CATEGORY_VERSIONS_UPDATED_AT": true
+        },
+        "constraint": {
+            "PRIMARY": true
+        }
     }
 }
