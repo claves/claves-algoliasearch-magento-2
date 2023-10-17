@@ -96,8 +96,8 @@
         <column xsi:type="int" name="version_id" unsigned="false" nullable="false" identity="true" comment="Version Id"/>
         <column xsi:type="int" name="entity_id" unsigned="true" nullable="false" identity="false" comment="Category Entity Id"/>
         <column xsi:type="int" name="store_id" unsigned="true" nullable="false" identity="false" comment="Store Id"/>
-        <column xsi:type="text" name="old_value" nullable="false" comment="Old Value"/>
-        <column xsi:type="text" name="new_value" nullable="false" comment="New Value"/>
+        <column xsi:type="varchar" name="old_value" nullable="false" length="255" comment="Old Value"/>
+        <column xsi:type="varchar" name="new_value" nullable="false" length="255" comment="New Value"/>
         <column xsi:type="datetime" name="created_at" on_update="false" nullable="false" default="CURRENT_TIMESTAMP" comment="Created At"/>
         <column xsi:type="datetime" name="updated_at" on_update="true" nullable="false" default="CURRENT_TIMESTAMP" comment="Updated At"/>
         <column xsi:type="datetime" name="indexed_at" nullable="true" comment="Indexed At"/>
