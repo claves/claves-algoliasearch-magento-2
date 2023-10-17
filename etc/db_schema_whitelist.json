@@ -116,7 +116,9 @@
             "ALGOLIASEARCH_CATEGORY_VERSIONS_UPDATED_AT": true
         },
         "constraint": {
-            "PRIMARY": true
+            "PRIMARY": true,
+            "ALGOLIASRCH_CTGR_VERSIONS_ENTT_ID_CAT_CTGR_ENTT_ENTT_ID": true,
+            "ALGOLIASEARCH_CATEGORY_VERSIONS_STORE_ID_STORE_STORE_ID": true
         }
     }
 }
