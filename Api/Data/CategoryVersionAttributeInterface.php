@@ -10,7 +10,7 @@ interface CategoryVersionAttributeInterface
      * Does this category have versions?
      * @return bool
      */
-    public function hasVersions() : boolean;
+    public function hasVersions() : bool;
 
     /**
      * Get all versions of this category
