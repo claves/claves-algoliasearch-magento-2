@@ -2,6 +2,7 @@
 
 namespace Algolia\AlgoliaSearch\Plugin;
 
+use Algolia\AlgoliaSearch\Helper\ConfigHelper;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\Data\CategoryInterface;
 use Magento\Catalog\Api\Data\CategoryExtensionFactory;
@@ -22,14 +23,19 @@ class CategoryVersionPlugin {
     /** @var CategoryVersionAttributeInterface  */
     protected $versionAttribute;
 
+    /** @var ConfigHelper */
+    protected $config;
+
     public function __construct(
         CategoryVersionRepositoryInterface $versionRepository,
         CategoryExtensionFactory $extensionFactory,
-        CategoryVersionAttributeInterfaceFactory $versionAttributeFactory
+        CategoryVersionAttributeInterfaceFactory $versionAttributeFactory,
+        ConfigHelper $config
     ) {
         $this->versionRepository = $versionRepository;
         $this->extensionFactory = $extensionFactory;
         $this->versionAttributeFactory = $versionAttributeFactory;
+        $this->config = $config;
     }
 
     /**
@@ -41,6 +47,8 @@ class CategoryVersionPlugin {
      * @throws \Magento\Framework\Exception\NoSuchEntityException
      */
     public function afterGet(CategoryRepositoryInterface $categoryRepository, CategoryInterface $category, int $categoryId, int $storeId = null): CategoryInterface {
+        if (!$this->config->isCategoryVersionTrackingEnabled()) return $category;
+
         $extensionAttributes = $category->getExtensionAttributes() ?? $this->extensionFactory->create();
         if (!$this->versionAttribute) {
             $this->versionAttribute = $this->versionAttributeFactory->create();

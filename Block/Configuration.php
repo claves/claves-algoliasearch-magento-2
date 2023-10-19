@@ -122,7 +122,17 @@ class Configuration extends Algolia implements CollectionDataSourceInterface
         if ($config->isInstantEnabled()
             && $config->replaceCategories()
             && $request->getControllerName() === 'category') {
+
+            // BEGIN MOD - RETRIEVE ALL RELEVANT CATEGORY DATA
             $category = $this->getCurrentCategory();
+//            $attr = $category->getExtensionAttributes(); // doesn't work - concrete class
+            if ($config->isCategoryVersionTrackingEnabled()) {
+                $categoryId = (int) $this->getRequest()->getParam('id', false);
+                $category = $this->categoryRepository->get($categoryId);
+                $attr = $category->getExtensionAttributes();
+                $versionsAttr = $attr->getAlgoliaCategoryVersions();
+            }
+            // END MOD
 
             if ($category && $category->getDisplayMode() !== 'PAGE') {
                 $category->getUrlInstance()->setStore($this->getStoreId());
