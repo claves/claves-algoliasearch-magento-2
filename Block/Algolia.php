@@ -25,6 +25,7 @@ use Magento\Framework\Url\Helper\Data;
 use Magento\Framework\View\Element\Template;
 use Magento\Sales\Model\Order;
 use Magento\Search\Helper\Data as CatalogSearchHelper;
+use Magento\Catalog\Api\CategoryRepositoryInterface;
 
 class Algolia extends Template implements CollectionDataSourceInterface
 {
@@ -97,6 +98,11 @@ class Algolia extends Template implements CollectionDataSourceInterface
      */
     protected $date;
 
+    /**
+     * @var CategoryRepositoryInterface
+     */
+    protected CategoryRepositoryInterface $categoryRepository;
+
     protected $priceKey;
 
     /**
@@ -119,6 +125,7 @@ class Algolia extends Template implements CollectionDataSourceInterface
      * @param CheckoutSession $checkoutSession
      * @param DateTime $date
      * @param array $data
+     * @param CategoryRepositoryInterface $categoryRepository
      */
     public function __construct(
         Template\Context $context,
@@ -139,6 +146,7 @@ class Algolia extends Template implements CollectionDataSourceInterface
         PersonalizationHelper $personalizationHelper,
         CheckoutSession $checkoutSession,
         DateTime $date,
+        CategoryRepositoryInterface $categoryRepository,
         array $data = []
     ) {
         $this->config = $config;
@@ -157,6 +165,7 @@ class Algolia extends Template implements CollectionDataSourceInterface
         $this->landingPageHelper = $landingPageHelper;
         $this->personalizationHelper = $personalizationHelper;
         $this->checkoutSession = $checkoutSession;
+        $this->categoryRepository = $categoryRepository;
         $this->date = $date;
 
         parent::__construct($context, $data);
