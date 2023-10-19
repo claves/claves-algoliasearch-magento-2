@@ -99,7 +99,7 @@
             "algoliasearch_query_param": true
         }
     },
-    "algoliasearch_category_versions": {
+    "algoliasearch_category_version": {
         "column": {
             "version_id": true,
             "entity_id": true,
@@ -112,13 +112,13 @@
             "resolved_at": true
         },
         "index": {
-            "ALGOLIASEARCH_CATEGORY_VERSIONS_CREATED_AT": true,
-            "ALGOLIASEARCH_CATEGORY_VERSIONS_UPDATED_AT": true
+            "ALGOLIASEARCH_CATEGORY_VERSION_CREATED_AT": true,
+            "ALGOLIASEARCH_CATEGORY_VERSION_UPDATED_AT": true
         },
         "constraint": {
             "PRIMARY": true,
-            "ALGOLIASRCH_CTGR_VERSIONS_ENTT_ID_CAT_CTGR_ENTT_ENTT_ID": true,
-            "ALGOLIASEARCH_CATEGORY_VERSIONS_STORE_ID_STORE_STORE_ID": true
+            "ALGOLIASRCH_CTGR_VERSION_ENTT_ID_CAT_CTGR_ENTT_ENTT_ID": true,
+            "ALGOLIASEARCH_CATEGORY_VERSION_STORE_ID_STORE_STORE_ID": true
         }
     }
 }
