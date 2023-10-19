@@ -10,7 +10,7 @@ class CategoryVersionAttribute implements \Algolia\AlgoliaSearch\Api\Data\Catego
     /**
      * @inheritDoc
      */
-    public function hasVersions(): boolean
+    public function hasVersions(): bool
     {
         // TODO: Implement hasVersions() method.
     }

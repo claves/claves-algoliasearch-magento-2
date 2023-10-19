@@ -13,7 +13,7 @@
     <type name="Magento\Catalog\Model\ResourceModel\Category">
         <plugin name="algoliaCategories" type="Algolia\AlgoliaSearch\Model\Indexer\CategoryObserver"/>
     </type>
-    
+
     <type name="Magento\Cms\Model\ResourceModel\Page">
         <plugin name="algoliaPages" type="Algolia\AlgoliaSearch\Model\Indexer\PageObserver"/>
     </type>
@@ -36,6 +36,7 @@
     <!-- Category version implementation -->
     <preference for="Algolia\AlgoliaSearch\Api\Data\CategoryVersionInterface" type="Algolia\AlgoliaSearch\Model\CategoryVersion" />
     <preference for="Algolia\AlgoliaSearch\Api\CategoryVersionRepositoryInterface" type="Algolia\AlgoliaSearch\Model\CategoryVersion\CategoryVersionRepository" />
+    <preference for="Algolia\AlgoliaSearch\Api\Data\CategoryVersionAttributeInterface" type="Algolia\AlgoliaSearch\Model\CategoryVersion\CategoryVersionAttribute" />
 
     <type name="Magento\Framework\View\Element\UiComponent\DataProvider\CollectionFactory">
         <arguments>
