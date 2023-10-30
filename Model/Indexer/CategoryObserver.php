@@ -4,11 +4,13 @@ namespace Algolia\AlgoliaSearch\Model\Indexer;
 
 use Algolia\AlgoliaSearch\Helper\ConfigHelper;
 use Algolia\AlgoliaSearch\Model\Indexer\Category as CategoryIndexer;
+use Magento\Catalog\Model\AbstractModel;
 use Magento\Catalog\Model\Category as CategoryModel;
 use Magento\Catalog\Model\ResourceModel\Category as CategoryResourceModel;
 use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Indexer\IndexerRegistry;
+use Algolia\AlgoliaSearch\Helper\Logger;
 
 class CategoryObserver
 {
@@ -24,6 +26,9 @@ class CategoryObserver
     /** @var ResourceConnection */
     protected $resource;
 
+    protected $logger;
+
+
     /**
      * CategoryObserver constructor.
      *
@@ -34,12 +39,29 @@ class CategoryObserver
     public function __construct(
         IndexerRegistry $indexerRegistry,
         ConfigHelper $configHelper,
-        ResourceConnection $resource
+        ResourceConnection $resource,
+        Logger $logger
     ) {
         $this->indexerRegistry = $indexerRegistry;
         $this->indexer = $indexerRegistry->get('algolia_categories');
         $this->configHelper = $configHelper;
         $this->resource = $resource;
+        $this->logger = $logger;
+    }
+
+    /**
+     * @param AbstractModel $model
+     * @param array $fields
+     * @return bool
+     */
+    protected function isDataChanged(AbstractModel $model, array $fields): bool
+    {
+        foreach ($fields as $field) {
+            if ($model->getOrigData($field) !== $model->getData($field)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -57,14 +79,12 @@ class CategoryObserver
         $categoryResource->addCommitCallback(function () use ($category) {
             $collectionIds = [];
             // To reduce the indexing operation for products, only update if these values have changed
-            if ($category->getOrigData('name') !== $category->getData('name')
-                || $category->getOrigData('include_in_menu') !== $category->getData('include_in_menu')
-                || $category->getOrigData('is_active') !== $category->getData('is_active')
-                || $category->getOrigData('path') !== $category->getData('path')) {
+            if ($this->isDataChanged($category, ['name', 'path', 'include_in_menu', 'is_active'])) {
                 /** @var ProductCollection $productCollection */
                 $productCollection = $category->getProductCollection();
                 $collectionIds = (array) $productCollection->getColumnValues('entity_id');
             }
+
             $changedProductIds = ($category->getChangedProductIds() !== null ? (array) $category->getChangedProductIds() : []);
 
             if (!$this->indexer->isScheduled()) {
