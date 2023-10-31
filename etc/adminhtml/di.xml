@@ -11,4 +11,7 @@
             <argument name="frontendUrlBuilder" xsi:type="object">Magento\Framework\Url</argument>
         </arguments>
     </type>
+    <type name="Magento\Catalog\Model\Category">
+        <plugin name="algoliaCategoryMovePlugin" type="Algolia\AlgoliaSearch\Plugin\CategoryMovePlugin"/>
+    </type>
 </config>
