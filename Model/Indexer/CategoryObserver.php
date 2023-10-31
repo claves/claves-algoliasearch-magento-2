@@ -11,6 +11,8 @@ use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Framework\App\ResourceConnection;
 use Magento\Framework\Indexer\IndexerRegistry;
 use Algolia\AlgoliaSearch\Helper\Logger;
+use Algolia\AlgoliaSearch\Api\CategoryVersionLoggerInterface;
+
 
 class CategoryObserver
 {
@@ -28,6 +30,9 @@ class CategoryObserver
 
     protected $logger;
 
+    protected $storeManager;
+
+    protected $categoryVersionLogger;
 
     /**
      * CategoryObserver constructor.
@@ -40,13 +45,17 @@ class CategoryObserver
         IndexerRegistry $indexerRegistry,
         ConfigHelper $configHelper,
         ResourceConnection $resource,
-        Logger $logger
+        Logger $logger,
+        \Magento\Store\Model\StoreManagerInterface $storeManager,
+        CategoryVersionLoggerInterface $categoryVersionLogger
     ) {
         $this->indexerRegistry = $indexerRegistry;
         $this->indexer = $indexerRegistry->get('algolia_categories');
         $this->configHelper = $configHelper;
         $this->resource = $resource;
         $this->logger = $logger;
+        $this->storeManager = $storeManager;
+        $this->categoryVersionLogger = $categoryVersionLogger;
     }
 
     /**
@@ -70,19 +79,24 @@ class CategoryObserver
      * @param CategoryModel $category
      *
      * @return CategoryResourceModel
+     * @throws \Magento\Framework\Exception\NoSuchEntityException
      */
     public function afterSave(
         CategoryResourceModel $categoryResource,
         CategoryResourceModel $result,
         CategoryModel $category
     ) {
-        $categoryResource->addCommitCallback(function () use ($category) {
+        $storeId = $this->storeManager->getStore()->getId();
+        $this->logger->log("-----> Store ID: $storeId");
+
+        $categoryResource->addCommitCallback(function () use ($category, $storeId) {
             $collectionIds = [];
             // To reduce the indexing operation for products, only update if these values have changed
             if ($this->isDataChanged($category, ['name', 'path', 'include_in_menu', 'is_active'])) {
                 /** @var ProductCollection $productCollection */
                 $productCollection = $category->getProductCollection();
                 $collectionIds = (array) $productCollection->getColumnValues('entity_id');
+                $this->categoryVersionLogger->logCategoryChange($category, $storeId);
             }
 
             $changedProductIds = ($category->getChangedProductIds() !== null ? (array) $category->getChangedProductIds() : []);
