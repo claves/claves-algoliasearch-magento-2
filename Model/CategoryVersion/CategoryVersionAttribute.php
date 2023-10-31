@@ -2,15 +2,37 @@
 
 namespace Algolia\AlgoliaSearch\Model\CategoryVersion;
 
+use Algolia\AlgoliaSearch\Api\CategoryVersionRepositoryInterface;
 use Algolia\AlgoliaSearch\Api\Data\CategoryVersionAttributeInterface;
+use Algolia\AlgoliaSearch\Api\Data\CategoryVersionInterface;
+use Algolia\AlgoliaSearch\Api\Data\CategoryVersionSearchResultsInterface;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 
 class CategoryVersionAttribute implements CategoryVersionAttributeInterface
 {
     /** @var int|null */
-    protected $storeId;
+    protected int|null $storeId;
 
     /** @var int */
-    protected $categoryId;
+    protected int $categoryId;
+
+    /** @var array|null  */
+    protected array|null $versions;
+
+    /** @var CategoryVersionRepositoryInterface  */
+    protected CategoryVersionRepositoryInterface $categoryVersionRepository;
+
+    /** @var SearchCriteriaBuilder  */
+    protected SearchCriteriaBuilder $searchCriteriaBuilder;
+
+    public function __construct(
+        CategoryVersionRepositoryInterface $categoryVersionRepository,
+        SearchCriteriaBuilder $searchCriteriaBuilder
+    ) {
+        $this->categoryVersionRepository = $categoryVersionRepository;
+        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
+        $this->versions = null;
+    }
 
     /**
      * @inheritDoc
@@ -27,7 +49,10 @@ class CategoryVersionAttribute implements CategoryVersionAttributeInterface
      */
     public function hasVersions(int $storeId = null): bool
     {
-        // TODO: Implement hasVersions() method.
+        $storeId ??= $this->storeId;
+        if (!$storeId) return false;
+
+        return (bool) count($this->getVersions($storeId));
     }
 
     /**
@@ -35,7 +60,18 @@ class CategoryVersionAttribute implements CategoryVersionAttributeInterface
      */
     public function getVersions(int $storeId = null): array
     {
-        // TODO: Implement getVersions() method.
+        $storeId ??= $this->storeId;
+        if (!$storeId) return false;
+
+        if (!$this->versions) {
+            $searchCriteria = $this->searchCriteriaBuilder
+                ->addFilter(CategoryVersionInterface::KEY_CATEGORY_ID, $this->categoryId)
+                ->addFilter(CategoryVersionInterface::KEY_STORE_ID, $storeId);
+            /* @var CategoryVersionSearchResultsInterface */
+            $this->versions = $this->categoryVersionRepository->getList($searchCriteria->create())->getItems();
+        }
+
+        return $this->versions;
     }
 
     /**

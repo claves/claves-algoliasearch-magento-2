@@ -123,13 +123,7 @@ class Configuration extends Algolia implements CollectionDataSourceInterface
             && $config->replaceCategories()
             && $request->getControllerName() === 'category') {
 
-            // BEGIN MOD - RETRIEVE ALL RELEVANT CATEGORY DATA
             $category = $this->getCurrentCategory();
-            if ($config->isCategoryVersionTrackingEnabled()) {
-                $attr = $category->getExtensionAttributes();
-                $versionsAttr = $attr->getAlgoliaCategoryVersions();
-            }
-            // END MOD
 
             if ($category && $category->getDisplayMode() !== 'PAGE') {
                 $category->getUrlInstance()->setStore($this->getStoreId());
@@ -285,6 +279,7 @@ class Configuration extends Algolia implements CollectionDataSourceInterface
                 'level' => $level,
                 'parentCategory' => $parentCategoryName,
                 'childCategories' => $childCategories,
+                'hasCategoryVersions' => $this->hasCategoryVersions(),
                 'url' => $this->getUrl('*/*/*', ['_use_rewrite' => true, '_forced_secure' => true])
             ],
             'showCatsNotIncludedInNavigation' => $config->showCatsNotIncludedInNavigation(),
@@ -433,5 +428,11 @@ class Configuration extends Algolia implements CollectionDataSourceInterface
     protected function getLandingPageConfiguration()
     {
         return $this->isLandingPage() ? $this->getCurrentLandingPage()->getConfiguration() : json_encode([]);
+    }
+
+    protected function hasCategoryVersions() : bool
+    {
+        if (!$this->config->isCategoryVersionTrackingEnabled()) return false;
+        return $this->getCurrentCategory()->getExtensionAttributes()->getAlgoliaCategoryVersions()->hasVersions();
     }
 }
