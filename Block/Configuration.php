@@ -125,10 +125,7 @@ class Configuration extends Algolia implements CollectionDataSourceInterface
 
             // BEGIN MOD - RETRIEVE ALL RELEVANT CATEGORY DATA
             $category = $this->getCurrentCategory();
-//            $attr = $category->getExtensionAttributes(); // doesn't work - concrete class
             if ($config->isCategoryVersionTrackingEnabled()) {
-                $categoryId = (int) $this->getRequest()->getParam('id', false);
-                $category = $this->categoryRepository->get($categoryId);
                 $attr = $category->getExtensionAttributes();
                 $versionsAttr = $attr->getAlgoliaCategoryVersions();
             }

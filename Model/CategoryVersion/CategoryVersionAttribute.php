@@ -2,15 +2,30 @@
 
 namespace Algolia\AlgoliaSearch\Model\CategoryVersion;
 
-use Algolia\AlgoliaSearch\Api\Data\CategoryVersionInterface;
+use Algolia\AlgoliaSearch\Api\Data\CategoryVersionAttributeInterface;
 
-class CategoryVersionAttribute implements \Algolia\AlgoliaSearch\Api\Data\CategoryVersionAttributeInterface
+class CategoryVersionAttribute implements CategoryVersionAttributeInterface
 {
+    /** @var int|null */
+    protected $storeId;
+
+    /** @var int */
+    protected $categoryId;
 
     /**
      * @inheritDoc
      */
-    public function hasVersions(): bool
+    public function load(int $categoryId, int $storeId = null) : CategoryVersionAttributeInterface
+    {
+        $this->categoryId = $categoryId;
+        $this->storeId = $storeId;
+        return $this;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function hasVersions(int $storeId = null): bool
     {
         // TODO: Implement hasVersions() method.
     }
@@ -18,7 +33,7 @@ class CategoryVersionAttribute implements \Algolia\AlgoliaSearch\Api\Data\Catego
     /**
      * @inheritDoc
      */
-    public function getVersions(): array
+    public function getVersions(int $storeId = null): array
     {
         // TODO: Implement getVersions() method.
     }
@@ -26,7 +41,7 @@ class CategoryVersionAttribute implements \Algolia\AlgoliaSearch\Api\Data\Catego
     /**
      * @inheritDoc
      */
-    public function getSearchFilters(): array
+    public function getSearchFilters(int $storeId = null): array
     {
         // TODO: Implement getSearchFilters() method.
     }

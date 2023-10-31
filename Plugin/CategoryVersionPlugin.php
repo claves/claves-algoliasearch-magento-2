@@ -12,19 +12,16 @@ use Algolia\AlgoliaSearch\Api\Data\CategoryVersionAttributeInterfaceFactory;
 
 class CategoryVersionPlugin {
     /** @var CategoryVersionRepositoryInterface */
-    protected $versionRepository;
+    protected CategoryVersionRepositoryInterface $versionRepository;
 
     /** @var CategoryExtensionFactory */
-    protected $extensionFactory;
+    protected CategoryExtensionFactory $extensionFactory;
 
     /** @var CategoryVersionAttributeInterfaceFactory */
-    protected $versionAttributeFactory;
-
-    /** @var CategoryVersionAttributeInterface  */
-    protected $versionAttribute;
+    protected CategoryVersionAttributeInterfaceFactory $versionAttributeFactory;
 
     /** @var ConfigHelper */
-    protected $config;
+    protected ConfigHelper $config;
 
     public function __construct(
         CategoryVersionRepositoryInterface $versionRepository,
@@ -48,18 +45,18 @@ class CategoryVersionPlugin {
      */
     public function afterGet(CategoryRepositoryInterface $categoryRepository, CategoryInterface $category, int $categoryId, int $storeId = null): CategoryInterface {
         if (!$this->config->isCategoryVersionTrackingEnabled()) return $category;
+        \Magento\Framework\App\ObjectManager::getInstance()->get(\Psr\Log\LoggerInterface::class)->debug("Category called for store id $storeId and category id $categoryId");
 
         $extensionAttributes = $category->getExtensionAttributes() ?? $this->extensionFactory->create();
-        if (!$this->versionAttribute) {
-            $this->versionAttribute = $this->versionAttributeFactory->create();
-        }
-        $extensionAttributes->setAlgoliaCategoryVersions($this->versionAttribute);
+        $versionAttribute = $extensionAttributes->getAlgoliaCategoryVersions() ?? $this->versionAttributeFactory->create()->load($categoryId, $storeId);
+        $extensionAttributes->setAlgoliaCategoryVersions($versionAttribute);
         $category->setExtensionAttributes($extensionAttributes);
         return $category;
     }
 
     // Unsupported in admin by core
     public function afterSave(CategoryRepositoryInterface $categoryRepository, CategoryInterface $result, CategoryInterface $category): CategoryInterface {
+        \Magento\Framework\App\ObjectManager::getInstance()->get(\Psr\Log\LoggerInterface::class)->debug('Category save called');
         return $result;
     }
 }

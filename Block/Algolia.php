@@ -164,7 +164,6 @@ class Algolia extends Template implements CollectionDataSourceInterface
         $this->landingPageHelper = $landingPageHelper;
         $this->personalizationHelper = $personalizationHelper;
         $this->checkoutSession = $checkoutSession;
-        $this->categoryRepository = $categoryRepository;
         $this->date = $date;
         $this->currentCategory = $currentCategory;
 
