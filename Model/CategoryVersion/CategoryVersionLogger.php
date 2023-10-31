@@ -31,6 +31,7 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
 
     protected CategoryVersionRepositoryInterface $categoryVersionRepository;
 
+    /** @var CategoryInterface[] $categoryCache */
     protected array $categoryCache = [];
 
     public function __construct(
@@ -53,7 +54,7 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
     {
         if (!$this->config->isCategoryVersionTrackingEnabled($storedId)) return;
 
-        $path = $this->getCategoryPath($category, $storedId);
+        $path = $this->getNewCategoryPath($category, $storedId);
         ObjectManager::getInstance()->get(LoggerInterface::class)->info("---> Path: $path");
 
         foreach ($this->getStoreIds($category, $storedId) as $id) {
@@ -62,7 +63,7 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
             $version = $this->categoryVersionRepository->getNew();
             $version->setCategoryId($category->getId());
             $version->setStoreId($id);
-            $version->setOldValue($category->getOrigData('name'));
+            $version->setOldValue($this->getOldCategoryPath($category, $storedId));
             $version->setNewValue($path);
             $this->categoryVersionRepository->save($version);
         }
@@ -73,20 +74,56 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
 
     /**
      * @param Category $category
-     * @param $storeId
+     * @param int $storeId
      * @return string
      * @throws NoSuchEntityException
      */
-    protected function getCategoryPath(Category $category, $storeId): string
+    protected function getNewCategoryPath(Category $category, int $storeId): string
     {
+        return $this->getCategoryPath($category->getName(), $category->getPathIds(), $storeId);
+    }
 
-        $path = $category->getName();
-        foreach (array_slice(array_reverse($category->getPathIds()), 1) as $treeCategoryId) {
-            $level = $this->categoryRepository->get($treeCategoryId, $storeId);
+    /**
+     * @param string $categoryName
+     * @param array $pathIds
+     * @param int $storeId
+     * @return string
+     * @throws NoSuchEntityException
+     */
+    protected function getCategoryPath(string $categoryName, array $pathIds, int $storeId): string
+    {
+        $path = $categoryName;
+        foreach (array_slice(array_reverse($pathIds), 1) as $treeCategoryId) {
+            $level = $this->getCachedCategory($treeCategoryId, $storeId);
             $path = $level->getName() . $this->config->getCategorySeparator() . $path;
             if ((int) $level->getLevel() === self::MIN_CATEGORY_LEVEL) break;
         }
         return $path;
+    }
+
+    /**
+     * @param int $categoryId
+     * @param int $storeId
+     * @return CategoryInterface
+     * @throws NoSuchEntityException
+     */
+    protected function getCachedCategory(int $categoryId, int $storeId): CategoryInterface
+    {
+        $key = "$categoryId-$storeId";
+        if (!array_key_exists($key, $this->categoryCache)) {
+            $this->categoryCache[$key] = $this->categoryRepository->get($categoryId, $storeId);
+        }
+        return $this->categoryCache[$key];
+    }
+
+    /**
+     * For extracting path ids from orig path data
+     * @param string|null $path
+     * @return int[]
+     */
+    protected function getPathIds(string|null $path): array
+    {
+        return $path !== null ? explode('/', $path) : [];
     }
 
     /**
@@ -123,17 +160,17 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
     }
 
     /**
-     * @param int $categoryId
+     * @param Category $category
      * @param int $storeId
-     * @return CategoryInterface
+     * @return string
      * @throws NoSuchEntityException
      */
-    protected function getCategory(int $categoryId, int $storeId): CategoryInterface
+    protected function getOldCategoryPath(Category $category, int $storeId): string
     {
-        $key = "$categoryId-$storeId";
-        if (!$this->categoryCache[$key]) {
-            $this->categoryCache[$key] = $this->categoryRepository->get($categoryId, $storeId);
-        }
-        return $this->categoryCache[$key];
+        return $this->getCategoryPath(
+            $category->getOrigData(CategoryInterface::KEY_NAME),
+            $this->getPathIds($category->getOrigData(CategoryInterface::KEY_PATH)),
+            $storeId
+        );
     }
 }
