@@ -112,9 +112,9 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
      */
     protected function getCategoryVersion(int $categoryId, string $path, int $storeId): CategoryVersionInterface {
         $searchCriteria = $this->searchCriteriaBuilder
-            ->addFilter(CategoryVersionInterface::CATEGORY_ID, $categoryId)
-            ->addFilter(CategoryVersionInterface::NEW_VALUE, $path)
-            ->addFilter(CategoryVersionInterface::STORE_ID, $storeId);
+            ->addFilter(CategoryVersionInterface::KEY_CATEGORY_ID, $categoryId)
+            ->addFilter(CategoryVersionInterface::KEY_NEW_VALUE, $path)
+            ->addFilter(CategoryVersionInterface::KEY_STORE_ID, $storeId);
         /* @var CategoryVersionSearchResultsInterface */
         $results = $this->categoryVersionRepository->getList($searchCriteria->create());
         if ($results->getTotalCount()) {

@@ -3,7 +3,6 @@
 namespace Algolia\AlgoliaSearch\Plugin;
 
 use Algolia\AlgoliaSearch\Api\CategoryVersionLoggerInterface;
-use Algolia\AlgoliaSearch\Helper\Logger;
 use Magento\Catalog\Model\Category;
 use Magento\Framework\Exception\AlreadyExistsException;
 use Magento\Framework\Exception\NoSuchEntityException;
@@ -11,8 +10,6 @@ use Magento\Store\Model\StoreManagerInterface;
 
 class CategoryMovePlugin
 {
-    protected $logger;
-
     /** @var StoreManagerInterface */
     protected StoreManagerInterface $storeManager;
 
@@ -20,12 +17,10 @@ class CategoryMovePlugin
     protected CategoryVersionLoggerInterface $categoryVersionLogger;
 
     public function __construct(
-        Logger                         $logger,
         StoreManagerInterface          $storeManager,
         CategoryVersionLoggerInterface $categoryVersionLogger
     )
     {
-        $this->logger = $logger;
         $this->storeManager = $storeManager;
         $this->categoryVersionLogger = $categoryVersionLogger;
     }
@@ -41,11 +36,6 @@ class CategoryMovePlugin
      */
     public function afterMove(Category $subject, Category $result, int $parentId, null|int $afterCategoryId)
     {
-        $this->logger->log("Moving the category to $parentId with after id $afterCategoryId");
-        $this->logger->log("Original category path " . $result->getOrigData('path'));
-        $this->logger->log("New category path: " . $result->getData('path'));
-
-//        $this->logger->log("Moving for store ID: $storeId");
         $this->categoryVersionLogger->logCategoryMove($result);
         return $result;
     }

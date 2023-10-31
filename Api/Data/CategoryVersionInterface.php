@@ -6,14 +6,14 @@ use Magento\Framework\Api\ExtensibleDataInterface;
 
 interface CategoryVersionInterface extends ExtensibleDataInterface
 {
-    const CATEGORY_ID = 'entity_id';
-    const STORE_ID = 'store_id';
-    const OLD_VALUE = 'old_value';
-    const NEW_VALUE = 'new_value';
-    const CREATED_AT = 'created_at';
-    const UPDATED_AT = 'updated_at';
-    const INDEXED_AT = 'indexed_at';
-    const RESOLVED_AT = 'resolved_at';
+    const KEY_CATEGORY_ID = 'entity_id';
+    const KEY_STORE_ID = 'store_id';
+    const KEY_OLD_VALUE = 'old_value';
+    const KEY_NEW_VALUE = 'new_value';
+    const KEY_CREATED_AT = 'created_at';
+    const KEY_UPDATED_AT = 'updated_at';
+    const KEY_INDEXED_AT = 'indexed_at';
+    const KEY_RESOLVED_AT = 'resolved_at';
 
     public function getCategoryId(): int;
     public function setCategoryId(int $categoryId): CategoryVersionInterface;

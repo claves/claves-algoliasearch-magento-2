@@ -27,51 +27,51 @@ class CategoryVersion extends AbstractExtensibleModel implements IdentityInterfa
 
     public function getCategoryId(): int
     {
-        return $this->getData(CategoryVersionInterface::CATEGORY_ID);
+        return $this->getData(CategoryVersionInterface::KEY_CATEGORY_ID);
     }
 
     public function setCategoryId(int $categoryId): CategoryVersionInterface
     {
-        return $this->setData(CategoryVersionInterface::CATEGORY_ID, $categoryId);
+        return $this->setData(CategoryVersionInterface::KEY_CATEGORY_ID, $categoryId);
     }
 
     public function getStoreId(): int
     {
-        return $this->getData(CategoryVersionInterface::STORE_ID);
+        return $this->getData(CategoryVersionInterface::KEY_STORE_ID);
     }
 
     public function setStoreId(int $storeId): CategoryVersionInterface
     {
-        return $this->setData(CategoryVersionInterface::STORE_ID, $storeId);
+        return $this->setData(CategoryVersionInterface::KEY_STORE_ID, $storeId);
     }
 
     public function getOldValue(): string
     {
-        return $this->getData(CategoryVersionInterface::OLD_VALUE);
+        return $this->getData(CategoryVersionInterface::KEY_OLD_VALUE);
     }
 
     public function setOldValue(string $val): CategoryVersionInterface
     {
-        return $this->setData(CategoryVersionInterface::OLD_VALUE, $val);
+        return $this->setData(CategoryVersionInterface::KEY_OLD_VALUE, $val);
     }
 
     public function getNewValue(): string
     {
-        return $this->getData(CategoryVersionInterface::NEW_VALUE);
+        return $this->getData(CategoryVersionInterface::KEY_NEW_VALUE);
     }
 
     public function setNewValue(string $val): CategoryVersionInterface
     {
-        return $this->setData(CategoryVersionInterface::NEW_VALUE, $val);
+        return $this->setData(CategoryVersionInterface::KEY_NEW_VALUE, $val);
     }
 
     public function getUpdatedAt(): string
     {
-        return $this->getData(CategoryVersionInterface::UPDATED_AT);
+        return $this->getData(CategoryVersionInterface::KEY_UPDATED_AT);
     }
 
     public function setUpdatedAt(?string $val): CategoryVersionInterface
     {
-        return $this->setData(CategoryVersionInterface::UPDATED_AT, $val);
+        return $this->setData(CategoryVersionInterface::KEY_UPDATED_AT, $val);
     }
 }
