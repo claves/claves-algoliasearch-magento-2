@@ -6,6 +6,7 @@ use Algolia\AlgoliaSearch\Api\CategoryVersionLoggerInterface;
 use Algolia\AlgoliaSearch\Helper\ConfigHelper;
 use Algolia\AlgoliaSearch\Helper\Logger;
 use Algolia\AlgoliaSearch\Model\Indexer\Category as CategoryIndexer;
+use Magento\Catalog\Api\Data\CategoryInterface;
 use Magento\Catalog\Model\AbstractModel;
 use Magento\Catalog\Model\Category as CategoryModel;
 use Magento\Catalog\Model\ResourceModel\Category as CategoryResourceModel;
@@ -70,12 +71,15 @@ class CategoryObserver
     )
     {
         $storeId = $this->storeManager->getStore()->getId();
-        $this->logger->log("-----> Store ID: $storeId");
 
         $categoryResource->addCommitCallback(function () use ($category, $storeId) {
             $collectionIds = [];
             // To reduce the indexing operation for products, only update if these values have changed
-            if ($this->isDataChanged($category, ['name', 'path', 'include_in_menu', 'is_active'])) {
+            if ($this->isDataChanged($category, [
+                CategoryInterface::KEY_NAME,
+                CategoryInterface::KEY_INCLUDE_IN_MENU,
+                CategoryInterface::KEY_IS_ACTIVE
+            ])) {
                 /** @var ProductCollection $productCollection */
                 $productCollection = $category->getProductCollection();
                 $collectionIds = (array) $productCollection->getColumnValues('entity_id');
