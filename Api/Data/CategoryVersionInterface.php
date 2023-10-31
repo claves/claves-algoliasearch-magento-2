@@ -19,4 +19,7 @@ interface CategoryVersionInterface extends ExtensibleDataInterface
     public function getNewValue(): string;
     public function setNewValue(string $val): CategoryVersionInterface;
 
+    public function getUpdatedAt(): string;
+    public function setUpdatedAt(?string $val): CategoryVersionInterface;
+
 }

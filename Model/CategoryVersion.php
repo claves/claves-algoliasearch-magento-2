@@ -65,4 +65,14 @@ class CategoryVersion extends AbstractExtensibleModel implements IdentityInterfa
     {
         return $this->setData(CategoryVersionResource::NEW_VALUE, $val);
     }
+
+    public function getUpdatedAt(): string
+    {
+        return $this->getData(CategoryVersionResource::UPDATED_AT);
+    }
+
+    public function setUpdatedAt(?string $val): CategoryVersionInterface
+    {
+        return $this->setData(CategoryVersionResource::UPDATED_AT, $val);
+    }
 }

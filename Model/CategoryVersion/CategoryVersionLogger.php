@@ -73,6 +73,7 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
             $version->setStoreId($id);
             $version->setOldValue($this->getOldCategoryPath($category, $storedId));
             $version->setNewValue($path);
+            $version->setUpdatedAt(null);
             $this->categoryVersionRepository->save($version);
         }
     }
