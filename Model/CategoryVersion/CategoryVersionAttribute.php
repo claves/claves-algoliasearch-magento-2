@@ -17,7 +17,7 @@ class CategoryVersionAttribute implements CategoryVersionAttributeInterface
     protected int $categoryId;
 
     /** @var array|null  */
-    protected array|null $versions;
+    private array|null $versions;
 
     /** @var CategoryVersionRepositoryInterface  */
     protected CategoryVersionRepositoryInterface $categoryVersionRepository;
@@ -61,14 +61,14 @@ class CategoryVersionAttribute implements CategoryVersionAttributeInterface
     public function getVersions(int $storeId = null): array
     {
         $storeId ??= $this->storeId;
-        if (!$storeId) return false;
+        if (!$storeId) return [];
 
         if (!$this->versions) {
             $searchCriteria = $this->searchCriteriaBuilder
                 ->addFilter(CategoryVersionInterface::KEY_CATEGORY_ID, $this->categoryId)
                 ->addFilter(CategoryVersionInterface::KEY_STORE_ID, $storeId);
             /* @var CategoryVersionSearchResultsInterface */
-            $this->versions = $this->categoryVersionRepository->getList($searchCriteria->create())->getItems();
+            $this->versions = array_values($this->categoryVersionRepository->getList($searchCriteria->create())->getItems());
         }
 
         return $this->versions;
@@ -79,6 +79,15 @@ class CategoryVersionAttribute implements CategoryVersionAttributeInterface
      */
     public function getSearchFilters(int $storeId = null): array
     {
-        // TODO: Implement getSearchFilters() method.
+        $storeId ??= $this->storeId;
+        if (!$storeId) return [];
+
+        $values = array_map(
+            function(CategoryVersionInterface $version) {
+                return $version->getNewValue();
+            },
+            $this->getVersions($storeId)
+        );
+        return $values;
     }
 }
