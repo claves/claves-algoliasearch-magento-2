@@ -5,10 +5,14 @@ namespace Algolia\AlgoliaSearch\Model\CategoryVersion;
 use Algolia\AlgoliaSearch\Api\CategoryVersionLoggerInterface;
 use Algolia\AlgoliaSearch\Api\CategoryVersionRepositoryInterface;
 use Algolia\AlgoliaSearch\Api\Data\CategoryVersionInterface;
+use Algolia\AlgoliaSearch\Api\Data\CategoryVersionSearchResultsInterface;
 use Algolia\AlgoliaSearch\Helper\ConfigHelper;
+use Algolia\AlgoliaSearch\Model\ResourceModel\CategoryVersion as CategoryVersionResource;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\Data\CategoryInterface;
+use Magento\Catalog\Api\Data\CategorySearchResultsInterface;
 use Magento\Catalog\Model\Category;
+use Magento\Framework\Api\SearchCriteriaBuilder;
 use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\StoreManager;
@@ -31,6 +35,8 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
 
     protected CategoryVersionRepositoryInterface $categoryVersionRepository;
 
+    protected SearchCriteriaBuilder $searchCriteriaBuilder;
+
     /** @var CategoryInterface[] $categoryCache */
     protected array $categoryCache = [];
 
@@ -38,13 +44,15 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
         ConfigHelper                       $config,
         CategoryRepositoryInterface        $categoryRepository,
         CategoryVersionRepositoryInterface $categoryVersionRepository,
-        StoreManager                       $storeManager
+        StoreManager                       $storeManager,
+        SearchCriteriaBuilder              $searchCriteriaBuilder
     )
     {
         $this->config = $config;
         $this->categoryRepository = $categoryRepository;
         $this->categoryVersionRepository = $categoryVersionRepository;
         $this->storeManager = $storeManager;
+        $this->searchCriteriaBuilder = $searchCriteriaBuilder;
     }
 
     /**
@@ -60,16 +68,34 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
         foreach ($this->getStoreIds($category, $storedId) as $id) {
             /** @var CategoryVersionInterface $version */
             ObjectManager::getInstance()->get(LoggerInterface::class)->info("---> Add log for store $id");
-            $version = $this->categoryVersionRepository->getNew();
+            $version = $this->getCategoryVersion($category->getId(), $path, $id);
             $version->setCategoryId($category->getId());
             $version->setStoreId($id);
             $version->setOldValue($this->getOldCategoryPath($category, $storedId));
             $version->setNewValue($path);
             $this->categoryVersionRepository->save($version);
         }
-        // Dedupe existing pending changes for this storeId
-        // Insert if not found
+    }
 
+    /**
+     * Get deduplicated record
+     * @param int $categoryId
+     * @param string $path
+     * @param int $storeId
+     * @return CategoryVersionInterface
+     */
+    protected function getCategoryVersion(int $categoryId, string $path, int $storeId): CategoryVersionInterface {
+        $searchCriteria = $this->searchCriteriaBuilder
+            ->addFilter(CategoryVersionResource::CATEGORY_ID, $categoryId)
+            ->addFilter(CategoryVersionResource::NEW_VALUE, $path)
+            ->addFilter(CategoryVersionResource::STORE_ID, $storeId);
+        /* @var CategoryVersionSearchResultsInterface */
+        $results = $this->categoryVersionRepository->getList($searchCriteria->create());
+        if ($results->getTotalCount()) {
+            return array_values($results->getItems())[0];
+        } else {
+            return $this->categoryVersionRepository->getNew();
+        }
     }
 
     /**
