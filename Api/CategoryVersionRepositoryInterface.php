@@ -3,8 +3,10 @@
 namespace Algolia\AlgoliaSearch\Api;
 
 use Algolia\AlgoliaSearch\Api\Data\CategoryVersionInterface;
+use Algolia\AlgoliaSearch\Api\Data\CategoryVersionSearchResultsInterface;
 use Magento\Framework\Exception\AlreadyExistsException;
 use Magento\Framework\Exception\NoSuchEntityException;
+use Magento\Framework\Api\SearchCriteriaInterface;
 
 interface CategoryVersionRepositoryInterface
 {
@@ -26,4 +28,10 @@ interface CategoryVersionRepositoryInterface
      * @throws AlreadyExistsException
      */
     public function save(CategoryVersionInterface $version): CategoryVersionInterface;
+
+    /**
+     * @param SearchCriteriaInterface|null $searchCriteria
+     * @return CategoryVersionSearchResultsInterface
+     */
+    public function getList(SearchCriteriaInterface $searchCriteria = null): CategoryVersionSearchResultsInterface;
 }
