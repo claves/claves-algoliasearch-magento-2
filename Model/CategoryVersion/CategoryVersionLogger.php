@@ -7,7 +7,6 @@ use Algolia\AlgoliaSearch\Api\CategoryVersionRepositoryInterface;
 use Algolia\AlgoliaSearch\Api\Data\CategoryVersionInterface;
 use Algolia\AlgoliaSearch\Api\Data\CategoryVersionSearchResultsInterface;
 use Algolia\AlgoliaSearch\Helper\ConfigHelper;
-use Algolia\AlgoliaSearch\Model\ResourceModel\CategoryVersion as CategoryVersionResource;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Api\Data\CategoryInterface;
 use Magento\Catalog\Api\Data\CategorySearchResultsInterface;
@@ -30,10 +29,13 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
      */
     protected ConfigHelper $config;
 
+    /** @var StoreManager  */
     protected StoreManager $storeManager;
 
+    /** @var CategoryVersionRepositoryInterface  */
     protected CategoryVersionRepositoryInterface $categoryVersionRepository;
 
+    /** @var SearchCriteriaBuilder */
     protected SearchCriteriaBuilder $searchCriteriaBuilder;
 
     /** @var CategoryInterface[] $categoryCache */
@@ -110,9 +112,9 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
      */
     protected function getCategoryVersion(int $categoryId, string $path, int $storeId): CategoryVersionInterface {
         $searchCriteria = $this->searchCriteriaBuilder
-            ->addFilter(CategoryVersionResource::CATEGORY_ID, $categoryId)
-            ->addFilter(CategoryVersionResource::NEW_VALUE, $path)
-            ->addFilter(CategoryVersionResource::STORE_ID, $storeId);
+            ->addFilter(CategoryVersionInterface::CATEGORY_ID, $categoryId)
+            ->addFilter(CategoryVersionInterface::NEW_VALUE, $path)
+            ->addFilter(CategoryVersionInterface::STORE_ID, $storeId);
         /* @var CategoryVersionSearchResultsInterface */
         $results = $this->categoryVersionRepository->getList($searchCriteria->create());
         if ($results->getTotalCount()) {

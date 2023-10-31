@@ -3,7 +3,6 @@
 namespace Algolia\AlgoliaSearch\Model;
 
 use Algolia\AlgoliaSearch\Api\Data\CategoryVersionInterface;
-use Algolia\AlgoliaSearch\Model\ResourceModel\CategoryVersion as CategoryVersionResource;
 use Magento\Framework\DataObject\IdentityInterface;
 use Magento\Framework\Model\AbstractExtensibleModel;
 
@@ -28,51 +27,51 @@ class CategoryVersion extends AbstractExtensibleModel implements IdentityInterfa
 
     public function getCategoryId(): int
     {
-        return $this->getData(CategoryVersionResource::CATEGORY_ID);
+        return $this->getData(CategoryVersionInterface::CATEGORY_ID);
     }
 
     public function setCategoryId(int $categoryId): CategoryVersionInterface
     {
-        return $this->setData(CategoryVersionResource::CATEGORY_ID, $categoryId);
+        return $this->setData(CategoryVersionInterface::CATEGORY_ID, $categoryId);
     }
 
     public function getStoreId(): int
     {
-        return $this->getData(CategoryVersionResource::STORE_ID);
+        return $this->getData(CategoryVersionInterface::STORE_ID);
     }
 
     public function setStoreId(int $storeId): CategoryVersionInterface
     {
-        return $this->setData(CategoryVersionResource::STORE_ID, $storeId);
+        return $this->setData(CategoryVersionInterface::STORE_ID, $storeId);
     }
 
     public function getOldValue(): string
     {
-        return $this->getData(CategoryVersionResource::OLD_VALUE);
+        return $this->getData(CategoryVersionInterface::OLD_VALUE);
     }
 
     public function setOldValue(string $val): CategoryVersionInterface
     {
-        return $this->setData(CategoryVersionResource::OLD_VALUE, $val);
+        return $this->setData(CategoryVersionInterface::OLD_VALUE, $val);
     }
 
     public function getNewValue(): string
     {
-        return $this->getData(CategoryVersionResource::NEW_VALUE);
+        return $this->getData(CategoryVersionInterface::NEW_VALUE);
     }
 
     public function setNewValue(string $val): CategoryVersionInterface
     {
-        return $this->setData(CategoryVersionResource::NEW_VALUE, $val);
+        return $this->setData(CategoryVersionInterface::NEW_VALUE, $val);
     }
 
     public function getUpdatedAt(): string
     {
-        return $this->getData(CategoryVersionResource::UPDATED_AT);
+        return $this->getData(CategoryVersionInterface::UPDATED_AT);
     }
 
     public function setUpdatedAt(?string $val): CategoryVersionInterface
     {
-        return $this->setData(CategoryVersionResource::UPDATED_AT, $val);
+        return $this->setData(CategoryVersionInterface::UPDATED_AT, $val);
     }
 }
