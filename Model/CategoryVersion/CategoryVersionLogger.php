@@ -122,8 +122,8 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
         $path = $categoryName;
         foreach (array_slice(array_reverse($pathIds), 1) as $treeCategoryId) {
             $level = $this->getCachedCategory($treeCategoryId, $storeId);
+            if ((int) $level->getLevel() < self::MIN_CATEGORY_LEVEL) break;
             $path = $level->getName() . $this->config->getCategorySeparator() . $path;
-            if ((int) $level->getLevel() === self::MIN_CATEGORY_LEVEL) break;
         }
         return $path;
     }
