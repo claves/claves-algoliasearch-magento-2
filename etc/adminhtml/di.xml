@@ -5,13 +5,11 @@
     <preference for="Algolia\AlgoliaSearch\Api\CategoryVersionLoggerInterface" type="\Algolia\AlgoliaSearch\Model\CategoryVersion\CategoryVersionLogger"/>
     <type name="Magento\Catalog\Model\Category">
         <plugin name="algolia_algoliasearch_plugin_category_url" type="Algolia\AlgoliaSearch\Plugin\CategoryUrlPlugin"/>
+        <plugin name="algoliaCategoryMovePlugin" type="Algolia\AlgoliaSearch\Plugin\CategoryMovePlugin"/>
     </type>
     <type name="Algolia\AlgoliaSearch\Block\Adminhtml\LandingPage\Renderer\UrlBuilder">
         <arguments>
             <argument name="frontendUrlBuilder" xsi:type="object">Magento\Framework\Url</argument>
         </arguments>
-    </type>
-    <type name="Magento\Catalog\Model\Category">
-        <plugin name="algoliaCategoryMovePlugin" type="Algolia\AlgoliaSearch\Plugin\CategoryMovePlugin"/>
     </type>
 </config>

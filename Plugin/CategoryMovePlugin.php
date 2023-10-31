@@ -45,9 +45,8 @@ class CategoryMovePlugin
         $this->logger->log("Original category path " . $result->getOrigData('path'));
         $this->logger->log("New category path: " . $result->getData('path'));
 
-        $storeId = $this->storeManager->getStore()->getId();
-        $this->logger->log("Moving for store ID: $storeId");
-        $this->categoryVersionLogger->logCategoryChange($result, $storeId);
+//        $this->logger->log("Moving for store ID: $storeId");
+        $this->categoryVersionLogger->logCategoryMove($result);
         return $result;
     }
 }

@@ -13,14 +13,13 @@ use Magento\Catalog\Api\Data\CategoryInterface;
 use Magento\Catalog\Api\Data\CategorySearchResultsInterface;
 use Magento\Catalog\Model\Category;
 use Magento\Framework\Api\SearchCriteriaBuilder;
-use Magento\Framework\App\ObjectManager;
 use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Store\Model\StoreManager;
-use Psr\Log\LoggerInterface;
 
 class CategoryVersionLogger implements CategoryVersionLoggerInterface
 {
     public const MIN_CATEGORY_LEVEL = 2;
+    public const DEFAULT_STORE = 0;
     /**
      * @var CategoryRepositoryInterface
      */
@@ -63,15 +62,39 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
         if (!$this->config->isCategoryVersionTrackingEnabled($storedId)) return;
 
         $path = $this->getNewCategoryPath($category, $storedId);
-        ObjectManager::getInstance()->get(LoggerInterface::class)->info("---> Path: $path");
 
         foreach ($this->getStoreIds($category, $storedId) as $id) {
             /** @var CategoryVersionInterface $version */
-            ObjectManager::getInstance()->get(LoggerInterface::class)->info("---> Add log for store $id");
             $version = $this->getCategoryVersion($category->getId(), $path, $id);
             $version->setCategoryId($category->getId());
             $version->setStoreId($id);
             $version->setOldValue($this->getOldCategoryPath($category, $storedId));
+            $version->setNewValue($path);
+            $version->setUpdatedAt(null);
+            $this->categoryVersionRepository->save($version);
+        }
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function logCategoryMove(Category $category): void {
+        $defaultStoreId = self::DEFAULT_STORE;
+        if (!$this->config->isCategoryVersionTrackingEnabled($defaultStoreId)) return;
+        foreach ($this->getStoreIds($category, $defaultStoreId, false) as $id) {
+            /** @var CategoryInterface */
+            $scopedCategory = $this->getCachedCategory($category->getId(), $id);
+            $path = $this->getNewCategoryPath($scopedCategory, $id);
+            /** @var CategoryVersionInterface */
+            $version = $this->getCategoryVersion($category->getId(), $path, $id);
+            $version->setCategoryId($category->getId());
+            $version->setStoreId($id);
+            $version->setOldValue(
+                $this->getCategoryPath(
+                    $scopedCategory->getName(),
+                    $this->getPathIds($category->getOrigData(CategoryInterface::KEY_PATH)),
+                    $id)
+            );
             $version->setNewValue($path);
             $version->setUpdatedAt(null);
             $this->categoryVersionRepository->save($version);
@@ -100,6 +123,7 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
     }
 
     /**
+     * Get the new category path for the category being updated
      * @param Category $category
      * @param int $storeId
      * @return string
@@ -111,6 +135,23 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
     }
 
     /**
+     * Get the old category path for a standard category save operation
+     * @param Category $category
+     * @param int $storeId
+     * @return string
+     * @throws NoSuchEntityException
+     */
+    protected function getOldCategoryPath(Category $category, int $storeId): string
+    {
+        return $this->getCategoryPath(
+            $category->getOrigData(CategoryInterface::KEY_NAME),
+            $this->getPathIds($category->getOrigData(CategoryInterface::KEY_PATH)),
+            $storeId
+        );
+    }
+
+    /**
+     * Get the category path name (used for category page IDs)
      * @param string $categoryName
      * @param array $pathIds
      * @param int $storeId
@@ -154,20 +195,23 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
     }
 
     /**
-     * Get applicable store ID's to log versions for - either the specified store or all non overridden stores
-     * @param int $storeId
+     * Get applicable store ID's to log versions for - either the specified store, all stores or all non overridden stores
+     * @param CategoryInterface $category
+     * @param int $storeId - specific store or 0 (for default)
+     * @param bool $filterOverride - whether to include overridden stores
      * @return array|int[]
      * @throws NoSuchEntityException
      */
-    protected function getStoreIds(CategoryInterface $category, int $storeId): array
+    protected function getStoreIds(CategoryInterface $category, int $storeId, bool $filterOverride = true): array
     {
+        //specified store
         if ($storeId) return [$storeId];
 
         $storeIds = [];
         foreach (array_keys($this->storeManager->getStores()) as $id) {
             if ($this->config->isEnabledBackend($id)
                 && $this->config->isCategoryVersionTrackingEnabled($id)
-                && !$this->isCategoryOverridden($category, $id)) {
+                && (!$filterOverride || !$this->isCategoryOverridden($category, $id))) {
                 $storeIds[] = $id;
             }
         }
@@ -184,20 +228,5 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
     {
         $storeScopedCategory = $this->categoryRepository->get($defaultCategory->getId(), $storeId);
         return $storeScopedCategory->getName() !== $defaultCategory->getName();
-    }
-
-    /**
-     * @param Category $category
-     * @param int $storeId
-     * @return string
-     * @throws NoSuchEntityException
-     */
-    protected function getOldCategoryPath(Category $category, int $storeId): string
-    {
-        return $this->getCategoryPath(
-            $category->getOrigData(CategoryInterface::KEY_NAME),
-            $this->getPathIds($category->getOrigData(CategoryInterface::KEY_PATH)),
-            $storeId
-        );
     }
 }
