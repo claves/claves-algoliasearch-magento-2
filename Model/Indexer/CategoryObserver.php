@@ -68,8 +68,14 @@ class CategoryObserver
         CategoryResourceModel $categoryResource,
         CategoryResourceModel $result,
         CategoryModel         $category
-    )
+    ) 
     {
+        if (!$this->configHelper->getApplicationID()
+            || !$this->configHelper->getAPIKey()
+            || !$this->configHelper->getSearchOnlyAPIKey()) {
+            return $result;
+        }
+        
         $storeId = $this->storeManager->getStore()->getId();
 
         $categoryResource->addCommitCallback(function () use ($category, $storeId) {
