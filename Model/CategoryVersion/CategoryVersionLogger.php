@@ -56,7 +56,7 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
         $path = $this->getCategoryPath($category, $storedId);
         ObjectManager::getInstance()->get(LoggerInterface::class)->info("---> Path: $path");
 
-        foreach ($this->getStoreIds($storedId) as $id) {
+        foreach ($this->getStoreIds($category, $storedId) as $id) {
             /** @var CategoryVersionInterface $version */
             ObjectManager::getInstance()->get(LoggerInterface::class)->info("---> Add log for store $id");
             $version = $this->categoryVersionRepository->getNew();
@@ -85,23 +85,38 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
     }
 
     /**
-     * Get applicable store ID's to log versions for
+     * Get applicable store ID's to log versions for - either the specified store or all non overridden stores
      * @param int $storeId
      * @return array|int[]
+     * @throws NoSuchEntityException
      */
-    protected function getStoreIds(int $storeId): array
+    protected function getStoreIds(CategoryInterface $category, int $storeId): array
     {
         if ($storeId) return [$storeId];
 
         $storeIds = [];
         foreach (array_keys($this->storeManager->getStores()) as $id) {
-            if ($this->config->isEnabledBackend($id) && $this->config->isCategoryVersionTrackingEnabled($id)) {
+            if ($this->config->isEnabledBackend($id)
+                && $this->config->isCategoryVersionTrackingEnabled($id)
+                && !$this->isCategoryOverridden($category, $id)) {
                 $storeIds[] = $id;
             }
         }
         return $storeIds;
     }
-    
+
+    /**
+     * @param CategoryInterface $defaultCategory
+     * @param int $storeId
+     * @return bool
+     * @throws NoSuchEntityException
+     */
+    protected function isCategoryOverridden(CategoryInterface $defaultCategory, int $storeId): bool
+    {
+        $storeScopedCategory = $this->categoryRepository->get($defaultCategory->getId(), $storeId);
+        return $storeScopedCategory->getName() !== $defaultCategory->getName();
+    }
+
     /**
      * @param int $categoryId
      * @param int $storeId
