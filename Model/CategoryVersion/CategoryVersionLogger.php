@@ -60,6 +60,11 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
             /** @var CategoryVersionInterface $version */
             ObjectManager::getInstance()->get(LoggerInterface::class)->info("---> Add log for store $id");
             $version = $this->categoryVersionRepository->getNew();
+            $version->setCategoryId($category->getId());
+            $version->setStoreId($id);
+            $version->setOldValue($category->getOrigData('name'));
+            $version->setNewValue($path);
+            $this->categoryVersionRepository->save($version);
         }
         // Dedupe existing pending changes for this storeId
         // Insert if not found
