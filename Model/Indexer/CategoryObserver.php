@@ -77,13 +77,18 @@ class CategoryObserver
             // To reduce the indexing operation for products, only update if these values have changed
             if ($this->isDataChanged($category, [
                 CategoryInterface::KEY_NAME,
+                CategoryInterface::KEY_PATH,
                 CategoryInterface::KEY_INCLUDE_IN_MENU,
                 CategoryInterface::KEY_IS_ACTIVE
             ])) {
                 /** @var ProductCollection $productCollection */
                 $productCollection = $category->getProductCollection();
                 $collectionIds = (array) $productCollection->getColumnValues('entity_id');
-                $this->categoryVersionLogger->logCategoryChange($category, $storeId);
+                if ($this->isDataChanged($category, [CategoryInterface::KEY_PATH])) {
+                    $this->categoryVersionLogger->logCategoryMove($category);
+                } else {
+                    $this->categoryVersionLogger->logCategoryChange($category, $storeId);
+                }
             }
 
             $changedProductIds = ($category->getChangedProductIds() !== null ? (array) $category->getChangedProductIds() : []);
