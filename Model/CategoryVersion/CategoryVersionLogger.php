@@ -63,15 +63,16 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
     {
         if (!$this->config->isCategoryVersionTrackingEnabled($storedId)) return;
 
-        $path = $this->getNewCategoryPath($category, $storedId);
+        $newPath = $this->getNewCategoryPath($category, $storedId);
+        $oldPath = $this->getOldCategoryPath($category, $storedId);
 
         foreach ($this->getStoreIds($category, $storedId) as $id) {
             /** @var CategoryVersionInterface $version */
-            $version = $this->getCategoryVersion($category->getId(), $path, $id);
+            $version = $this->getCategoryVersion($category->getId(), $oldPath, $id);
             $version->setCategoryId($category->getId());
             $version->setStoreId($id);
-            $version->setOldValue($this->getOldCategoryPath($category, $storedId));
-            $version->setNewValue($path);
+            $version->setOldValue($oldPath);
+            $version->setNewValue($newPath);
             $version->setUpdatedAt(null);
             $this->categoryVersionRepository->save($version);
         }
@@ -83,21 +84,22 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
     public function logCategoryMove(Category $category): void {
         $defaultStoreId = self::DEFAULT_STORE;
         if (!$this->config->isCategoryVersionTrackingEnabled($defaultStoreId)) return;
+        
         foreach ($this->getStoreIds($category, $defaultStoreId, false) as $id) {
             /** @var CategoryInterface */
             $scopedCategory = $this->getCachedCategory($category->getId(), $id);
-            $path = $this->getNewCategoryPath($scopedCategory, $id);
+            $newPath = $this->getNewCategoryPath($scopedCategory, $id);
+            $oldPath = $this->getCategoryPath(
+                $scopedCategory->getName(),
+                $this->getPathIds($category->getOrigData(CategoryInterface::KEY_PATH)),
+                $id
+            );
             /** @var CategoryVersionInterface */
-            $version = $this->getCategoryVersion($category->getId(), $path, $id);
+            $version = $this->getCategoryVersion($category->getId(), $oldPath, $id);
             $version->setCategoryId($category->getId());
             $version->setStoreId($id);
-            $version->setOldValue(
-                $this->getCategoryPath(
-                    $scopedCategory->getName(),
-                    $this->getPathIds($category->getOrigData(CategoryInterface::KEY_PATH)),
-                    $id)
-            );
-            $version->setNewValue($path);
+            $version->setOldValue($oldPath);
+            $version->setNewValue($newPath);
             $version->setUpdatedAt(null);
             $this->categoryVersionRepository->save($version);
         }
@@ -113,7 +115,7 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
     protected function getCategoryVersion(int $categoryId, string $path, int $storeId): CategoryVersionInterface {
         $searchCriteria = $this->searchCriteriaBuilder
             ->addFilter(CategoryVersionInterface::KEY_CATEGORY_ID, $categoryId)
-            ->addFilter(CategoryVersionInterface::KEY_NEW_VALUE, $path)
+            ->addFilter(CategoryVersionInterface::KEY_OLD_VALUE, $path)
             ->addFilter(CategoryVersionInterface::KEY_STORE_ID, $storeId);
         /* @var CategoryVersionSearchResultsInterface */
         $results = $this->categoryVersionRepository->getList($searchCriteria->create());
