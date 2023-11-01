@@ -63,10 +63,9 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
     {
         if (!$this->config->isCategoryVersionTrackingEnabled($storedId)) return;
 
-        $newPath = $this->getNewCategoryPath($category, $storedId);
-        $oldPath = $this->getOldCategoryPath($category, $storedId);
-
         foreach ($this->getStoreIds($category, $storedId) as $id) {
+            $newPath = $this->getNewCategoryPath($category, $id);
+            $oldPath = $this->getOldCategoryPath($category, $id);
             /** @var CategoryVersionInterface $version */
             $version = $this->getCategoryVersion($category->getId(), $oldPath, $id);
             $version->setCategoryId($category->getId());
@@ -84,7 +83,7 @@ class CategoryVersionLogger implements CategoryVersionLoggerInterface
     public function logCategoryMove(Category $category): void {
         $defaultStoreId = self::DEFAULT_STORE;
         if (!$this->config->isCategoryVersionTrackingEnabled($defaultStoreId)) return;
-        
+
         foreach ($this->getStoreIds($category, $defaultStoreId, false) as $id) {
             /** @var CategoryInterface */
             $scopedCategory = $this->getCachedCategory($category->getId(), $id);
