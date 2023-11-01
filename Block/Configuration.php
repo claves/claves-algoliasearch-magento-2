@@ -280,7 +280,7 @@ class Configuration extends Algolia implements CollectionDataSourceInterface
                 'parentCategory' => $parentCategoryName,
                 'childCategories' => $childCategories,
                 'hasCategoryVersions' => $this->hasCategoryVersions(),
-                'alternatePaths' => $this->getAlternatePaths(),
+                'alternatePaths' => $this->getAlternatePaths($path),
                 'url' => $this->getUrl('*/*/*', ['_use_rewrite' => true, '_forced_secure' => true])
             ],
             'showCatsNotIncludedInNavigation' => $config->showCatsNotIncludedInNavigation(),
@@ -434,12 +434,17 @@ class Configuration extends Algolia implements CollectionDataSourceInterface
     protected function hasCategoryVersions(): bool
     {
         if (!$this->config->isCategoryVersionTrackingEnabled()) return false;
-        return $this->getCurrentCategory()->getExtensionAttributes()->getAlgoliaCategoryVersions()->hasVersions();
+        return (bool) $this->getCurrentCategory()->getExtensionAttributes()->getAlgoliaCategoryVersions()?->hasVersions();
     }
 
-    protected function getAlternatePaths(): array
+    protected function getAlternatePaths(string $mainPath): array
     {
-        if (!$this->config->isCategoryVersionTrackingEnabled()) return [];
-        return $this->getCurrentCategory()->getExtensionAttributes()->getAlgoliaCategoryVersions()->getSearchFilters();
+        if (!$this->config->isCategoryVersionTrackingEnabled() || !$this->hasCategoryVersions()) return [];
+        return array_unique(
+            array_merge(
+                [$mainPath],
+                $this->getCurrentCategory()->getExtensionAttributes()->getAlgoliaCategoryVersions()->getSearchFilters()
+            )
+        );
     }
 }

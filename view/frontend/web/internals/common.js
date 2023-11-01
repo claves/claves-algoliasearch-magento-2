@@ -408,7 +408,7 @@ define(['jquery', 'algoliaBundle'], function ($, algoliaBundle) {
                                 uiStateProductIndex['hierarchicalMenu']['categories.level0'] = landingPageConfig['categories.level0'].split(algoliaConfig.instant.categorySeparator);
                             }
                         }
-                        if (currentFacet.attribute == 'categories' && algoliaConfig.isCategoryPage) {
+                        if (currentFacet.attribute == 'categories' && algoliaConfig.isCategoryPage && !algoliaConfig.request.hasCategoryVersions) {
                             uiStateProductIndex['hierarchicalMenu']['categories.level0'] = [algoliaConfig.request.path];
                         }
                         // Handle sliders

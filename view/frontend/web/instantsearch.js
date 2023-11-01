@@ -111,8 +111,13 @@ define(
                             }
                     }
 
+
+                    const getCategoryPageIdFilter = (param, paths) => {
+                        return paths.map(path => `${param}:'${path}'`).join(' OR ');
+                    };
+
                     if (algoliaConfig.instant.isVisualMerchEnabled && algoliaConfig.isCategoryPage ) {
-                        searchParameters.filters = `${algoliaConfig.instant.categoryPageIdAttribute}:'${algoliaConfig.request.path}'`;
+                        searchParameters.filters = getCategoryPageIdFilter(algoliaConfig.instant.categoryPageIdAttribute, algoliaConfig.request.alternatePaths);
                     }
 
                     instantsearchOptions = algolia.triggerHooks('beforeInstantsearchInit', instantsearchOptions, algoliaBundle);
@@ -460,7 +465,7 @@ define(
                                         templates         : templates,
                                         showParentLevel   : true,
                                         limit             : algoliaConfig.maxValuesPerFacet,
-                                        rootPath          : algoliaConfig.request.path,
+                                        rootPath          : algoliaConfig.request.hasCategoryVersions ? null : algoliaConfig.request.path,
                                         sortBy            : ['name:asc'],
                                         transformItems(items) {
                                             return (algoliaConfig.isCategoryPage)

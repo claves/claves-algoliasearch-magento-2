@@ -84,7 +84,7 @@ class CategoryVersionAttribute implements CategoryVersionAttributeInterface
 
         $values = array_map(
             function(CategoryVersionInterface $version) {
-                return $version->getNewValue();
+                return $version->getOldValue();
             },
             $this->getVersions($storeId)
         );
