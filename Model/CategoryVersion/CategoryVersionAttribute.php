@@ -82,12 +82,11 @@ class CategoryVersionAttribute implements CategoryVersionAttributeInterface
         $storeId ??= $this->storeId;
         if (!$storeId) return [];
 
-        $values = array_map(
+        return array_map(
             function(CategoryVersionInterface $version) {
                 return $version->getOldValue();
             },
             $this->getVersions($storeId)
         );
-        return $values;
     }
 }

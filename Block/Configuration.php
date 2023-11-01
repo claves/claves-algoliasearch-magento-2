@@ -280,7 +280,7 @@ class Configuration extends Algolia implements CollectionDataSourceInterface
                 'parentCategory' => $parentCategoryName,
                 'childCategories' => $childCategories,
                 'hasCategoryVersions' => $this->hasCategoryVersions(),
-                'alternatePaths' => $this->getAlternatePaths($path),
+                'alternatePaths' => array_values($this->getAlternatePaths($path)),
                 'url' => $this->getUrl('*/*/*', ['_use_rewrite' => true, '_forced_secure' => true])
             ],
             'showCatsNotIncludedInNavigation' => $config->showCatsNotIncludedInNavigation(),
