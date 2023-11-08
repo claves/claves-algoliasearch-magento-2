@@ -13,49 +13,57 @@ use Magento\Framework\App\Helper\AbstractHelper;
 use Magento\Framework\App\Helper\Context;
 use Magento\Framework\Message\ManagerInterface;
 use Symfony\Component\Console\Output\ConsoleOutput;
+use Magento\Store\Model\StoreManagerInterface;
 
 class AlgoliaHelper extends AbstractHelper
 {
     /** @var SearchClient */
-    private $client;
+    protected $client;
 
     /** @var ConfigHelper */
-    private $config;
+    protected $config;
 
     /** @var ManagerInterface */
-    private $messageManager;
+    protected $messageManager;
 
     /** @var ConsoleOutput */
-    private $consoleOutput;
+    protected $consoleOutput;
 
     /** @var int */
-    private $maxRecordSize;
+    protected $maxRecordSize;
 
     /** @var array */
-    private $potentiallyLongAttributes = ['description', 'short_description', 'meta_description', 'content'];
+    protected $potentiallyLongAttributes = ['description', 'short_description', 'meta_description', 'content'];
 
     /** @var array */
-    private $nonCastableAttributes = ['sku', 'name', 'description', 'query'];
+    protected $nonCastableAttributes = ['sku', 'name', 'description', 'query'];
 
     /** @var string */
-    private static $lastUsedIndexName;
+    protected static $lastUsedIndexName;
 
     /** @var string */
-    private static $lastTaskId;
+    protected static $lastTaskId;
 
+    /**
+     * @param Context $context
+     * @param ConfigHelper $configHelper
+     * @param ManagerInterface $messageManager
+     * @param ConsoleOutput $consoleOutput
+     */
     public function __construct(
         Context $context,
+        StoreManagerInterface $storeManager,
         ConfigHelper $configHelper,
         ManagerInterface $messageManager,
         ConsoleOutput $consoleOutput
     ) {
         parent::__construct($context);
-
+        $this->storeManager = $storeManager;
         $this->config = $configHelper;
         $this->messageManager = $messageManager;
         $this->consoleOutput = $consoleOutput;
 
-        $this->resetCredentialsFromConfig();
+        $this->resetCredentialsFromConfig($this->storeManager->getStore()->getId());
 
         // Merge non castable attributes set in config
         $this->nonCastableAttributes = array_merge(
@@ -69,21 +77,34 @@ class AlgoliaHelper extends AbstractHelper
         UserAgent::addCustomUserAgent('Edition', $this->config->getMagentoEdition());
     }
 
+    /**
+     * @return \Magento\Framework\App\RequestInterface
+     */
     public function getRequest()
     {
         return $this->_getRequest();
     }
 
-    public function resetCredentialsFromConfig()
+    /**
+     * @return void
+     */
+    public function resetCredentialsFromConfig($storeId = null)
     {
-        if ($this->config->getApplicationID() && $this->config->getAPIKey()) {
-            $this->client = SearchClient::create(
-                $this->config->getApplicationID(),
-                $this->config->getAPIKey()
-            );
+        $storeIds = array_keys($this->storeManager->getStores());
+        foreach ($storeIds as $storeId) {
+            if ($this->config->getApplicationID($storeId) && $this->config->getAPIKey($storeId)) {
+                $this->client = SearchClient::create(
+                    $this->config->getApplicationID($storeId),
+                    $this->config->getAPIKey($storeId)
+                );
+            }
         }
     }
 
+    /**
+     * @return SearchClient
+     * @throws AlgoliaException
+     */
     public function getClient()
     {
         $this->checkClient(__FUNCTION__);
@@ -91,6 +112,11 @@ class AlgoliaHelper extends AbstractHelper
         return $this->client;
     }
 
+    /**
+     * @param $name
+     * @return SearchIndex
+     * @throws AlgoliaException
+     */
     public function getIndex($name)
     {
         $this->checkClient(__FUNCTION__);
@@ -98,6 +124,10 @@ class AlgoliaHelper extends AbstractHelper
         return $this->client->initIndex($name);
     }
 
+    /**
+     * @return mixed
+     * @throws AlgoliaException
+     */
     public function listIndexes()
     {
         $this->checkClient(__FUNCTION__);
@@ -105,6 +135,13 @@ class AlgoliaHelper extends AbstractHelper
         return $this->client->listIndices();
     }
 
+    /**
+     * @param $indexName
+     * @param $q
+     * @param $params
+     * @return mixed|null
+     * @throws AlgoliaException
+     */
     public function query($indexName, $q, $params)
     {
         $this->checkClient(__FUNCTION__);
@@ -116,6 +153,12 @@ class AlgoliaHelper extends AbstractHelper
         return $this->client->initIndex($indexName)->search($q, $params);
     }
 
+    /**
+     * @param $indexName
+     * @param $objectIds
+     * @return mixed
+     * @throws AlgoliaException
+     */
     public function getObjects($indexName, $objectIds)
     {
         $this->checkClient(__FUNCTION__);
@@ -137,9 +180,10 @@ class AlgoliaHelper extends AbstractHelper
         $settings,
         $forwardToReplicas = false,
         $mergeSettings = false,
-        $mergeSettingsFrom = ''
+        $mergeSettingsFrom = '',
+        $storeId = null
     ) {
-        $this->checkClient(__FUNCTION__);
+        //$this->checkClient(__FUNCTION__);
 
         $index = $this->getIndex($indexName);
 
@@ -150,10 +194,18 @@ class AlgoliaHelper extends AbstractHelper
         $res = $index->setSettings($settings, [
             'forwardToReplicas' => $forwardToReplicas,
         ]);
+        /*echo "<pre>";
+        print_r($res);
+        exit();*/
 
         self::setLastOperationInfo($indexName, $res);
     }
 
+    /**
+     * @param $indexName
+     * @return void
+     * @throws AlgoliaException
+     */
     public function deleteIndex($indexName)
     {
         $this->checkClient(__FUNCTION__);
@@ -162,6 +214,12 @@ class AlgoliaHelper extends AbstractHelper
         self::setLastOperationInfo($indexName, $res);
     }
 
+    /**
+     * @param $ids
+     * @param $indexName
+     * @return void
+     * @throws AlgoliaException
+     */
     public function deleteObjects($ids, $indexName)
     {
         $this->checkClient(__FUNCTION__);
@@ -173,6 +231,12 @@ class AlgoliaHelper extends AbstractHelper
         self::setLastOperationInfo($indexName, $res);
     }
 
+    /**
+     * @param $tmpIndexName
+     * @param $indexName
+     * @return void
+     * @throws AlgoliaException
+     */
     public function moveIndex($tmpIndexName, $indexName)
     {
         $this->checkClient(__FUNCTION__);
@@ -181,6 +245,11 @@ class AlgoliaHelper extends AbstractHelper
         self::setLastOperationInfo($indexName, $res);
     }
 
+    /**
+     * @param $key
+     * @param $params
+     * @return string
+     */
     public function generateSearchSecuredApiKey($key, $params = [])
     {
         // This is to handle a difference between API client v1 and v2.
@@ -191,6 +260,11 @@ class AlgoliaHelper extends AbstractHelper
         return SearchClient::generateSecuredApiKey($key, $params);
     }
 
+    /**
+     * @param $indexName
+     * @return void
+     * @throws \Exception
+     */
     public function getSettings($indexName)
     {
         try {
@@ -202,6 +276,12 @@ class AlgoliaHelper extends AbstractHelper
         }
     }
 
+    /**
+     * @param $indexName
+     * @param $settings
+     * @param $mergeSettingsFrom
+     * @return array|void
+     */
     public function mergeSettings($indexName, $settings, $mergeSettingsFrom = '')
     {
         $onlineSettings = [];
@@ -241,6 +321,12 @@ class AlgoliaHelper extends AbstractHelper
         return $onlineSettings;
     }
 
+    /**
+     * @param $objects
+     * @param $indexName
+     * @return void
+     * @throws \Algolia\AlgoliaSearch\Exceptions\MissingObjectId
+     */
     public function addObjects($objects, $indexName)
     {
         $this->prepareRecords($objects, $indexName);
@@ -260,7 +346,12 @@ class AlgoliaHelper extends AbstractHelper
         self::setLastOperationInfo($indexName, $response);
     }
 
-    private static function setLastOperationInfo($indexName, $response)
+    /**
+     * @param $indexName
+     * @param $response
+     * @return void
+     */
+    protected static function setLastOperationInfo($indexName, $response)
     {
         self::$lastUsedIndexName = $indexName;
 
@@ -277,6 +368,12 @@ class AlgoliaHelper extends AbstractHelper
         self::$lastTaskId = isset($response['taskID']) ? $response['taskID'] : null;
     }
 
+    /**
+     * @param $rule
+     * @param $indexName
+     * @param $forwardToReplicas
+     * @return void
+     */
     public function saveRule($rule, $indexName, $forwardToReplicas = false)
     {
         $index = $this->getIndex($indexName);
@@ -287,6 +384,11 @@ class AlgoliaHelper extends AbstractHelper
         self::setLastOperationInfo($indexName, $res);
     }
 
+    /**
+     * @param $rules
+     * @param $indexName
+     * @return void
+     */
     public function batchRules($rules, $indexName)
     {
         $index = $this->getIndex($indexName);
@@ -298,6 +400,11 @@ class AlgoliaHelper extends AbstractHelper
         self::setLastOperationInfo($indexName, $res);
     }
 
+    /**
+     * @param $indexName
+     * @param $parameters
+     * @return mixed
+     */
     public function searchRules($indexName, $parameters)
     {
         $index = $this->getIndex($indexName);
@@ -309,6 +416,12 @@ class AlgoliaHelper extends AbstractHelper
         return $index->searchRules($parameters['query'], $parameters);
     }
 
+    /**
+     * @param $indexName
+     * @param $objectID
+     * @param $forwardToReplicas
+     * @return void
+     */
     public function deleteRule($indexName, $objectID, $forwardToReplicas = false)
     {
         $index = $this->getIndex($indexName);
@@ -319,6 +432,11 @@ class AlgoliaHelper extends AbstractHelper
         self::setLastOperationInfo($indexName, $res);
     }
 
+    /**
+     * @param $indexName
+     * @param $synonyms
+     * @return void
+     */
     public function setSynonyms($indexName, $synonyms)
     {
         $index = $this->getIndex($indexName);
@@ -362,6 +480,11 @@ class AlgoliaHelper extends AbstractHelper
         self::setLastOperationInfo($indexName, $res);
     }
 
+    /**
+     * @param $fromIndexName
+     * @param $toIndexName
+     * @return void
+     */
     public function copySynonyms($fromIndexName, $toIndexName)
     {
         $fromIndex = $this->getIndex($fromIndexName);
@@ -415,13 +538,18 @@ class AlgoliaHelper extends AbstractHelper
         self::setLastOperationInfo($toIndexName, $res);
     }
 
-    private function checkClient($methodName)
+    /**
+     * @param $methodName
+     * @return void
+     * @throws AlgoliaException
+     */
+    protected function checkClient($methodName)
     {
-        if (isset($this->client)) {
+       /* if (isset($this->client)) {
             return;
-        }
+        }*/
 
-        $this->resetCredentialsFromConfig();
+        $this->resetCredentialsFromConfig($this->storeManager->getStore()->getId());
 
         if (!isset($this->client)) {
             $msg = 'Operation ' . $methodName . ' could not be performed because Algolia credentials were not provided.';
@@ -430,6 +558,10 @@ class AlgoliaHelper extends AbstractHelper
         }
     }
 
+    /**
+     * @param $indexName
+     * @return void
+     */
     public function clearIndex($indexName)
     {
         $res = $this->getIndex($indexName)->clearObjects();
@@ -437,6 +569,12 @@ class AlgoliaHelper extends AbstractHelper
         self::setLastOperationInfo($indexName, $res);
     }
 
+    /**
+     * @param $lastUsedIndexName
+     * @param $lastTaskId
+     * @return void
+     * @throws AlgoliaException
+     */
     public function waitLastTask($lastUsedIndexName = null, $lastTaskId = null)
     {
         if ($lastUsedIndexName === null && isset(self::$lastUsedIndexName)) {
@@ -458,7 +596,13 @@ class AlgoliaHelper extends AbstractHelper
         $this->client->initIndex($lastUsedIndexName)->waitTask($lastTaskId);
     }
 
-    private function prepareRecords(&$objects, $indexName)
+    /**
+     * @param $objects
+     * @param $indexName
+     * @return void
+     * @throws \Exception
+     */
+    protected function prepareRecords(&$objects, $indexName)
     {
         $currentCET = new \DateTime('now', new \DateTimeZone('Europe/Paris'));
         $currentCET = $currentCET->format('Y-m-d H:i:s');
@@ -505,7 +649,10 @@ class AlgoliaHelper extends AbstractHelper
         }
     }
 
-    private function getMaxRecordSize()
+    /**
+     * @return int
+     */
+    protected function getMaxRecordSize()
     {
         if (!$this->maxRecordSize) {
             $this->maxRecordSize = $this->config->getMaxRecordSizeLimit();
@@ -514,7 +661,11 @@ class AlgoliaHelper extends AbstractHelper
         return $this->maxRecordSize;
     }
 
-    private function handleTooBigRecord($object)
+    /**
+     * @param $object
+     * @return false|mixed
+     */
+    protected function handleTooBigRecord($object)
     {
         $size = $this->calculateObjectSize($object);
 
@@ -560,7 +711,11 @@ class AlgoliaHelper extends AbstractHelper
         return $object;
     }
 
-    private function getLongestAttribute($object)
+    /**
+     * @param $object
+     * @return int|string
+     */
+    protected function getLongestAttribute($object)
     {
         $maxLength = 0;
         $longestAttribute = '';
@@ -578,6 +733,10 @@ class AlgoliaHelper extends AbstractHelper
         return $longestAttribute;
     }
 
+    /**
+     * @param $productData
+     * @return void
+     */
     public function castProductObject(&$productData)
     {
         foreach ($productData as $key => &$data) {
@@ -603,7 +762,11 @@ class AlgoliaHelper extends AbstractHelper
         }
     }
 
-    private function castRecord($object)
+    /**
+     * @param $object
+     * @return mixed
+     */
+    protected function castRecord($object)
     {
         foreach ($object as $key => &$value) {
             if (in_array($key, $this->nonCastableAttributes, true) === true) {
@@ -630,7 +793,11 @@ class AlgoliaHelper extends AbstractHelper
         return floatval($value) !== INF;
     }
 
-    private function castAttribute($value)
+    /**
+     * @param $value
+     * @return float|int
+     */
+    protected function castAttribute($value)
     {
         if (is_numeric($value) && floatval($value) === floatval((int) $value)) {
             return (int) $value;
@@ -643,11 +810,17 @@ class AlgoliaHelper extends AbstractHelper
         return $value;
     }
 
+    /**
+     * @return string
+     */
     public function getLastIndexName()
     {
         return self::$lastUsedIndexName;
     }
 
+    /**
+     * @return string
+     */
     public function getLastTaskId()
     {
         return self::$lastTaskId;
@@ -658,11 +831,17 @@ class AlgoliaHelper extends AbstractHelper
      *
      * @return int
      */
-    private function calculateObjectSize($object)
+    protected function calculateObjectSize($object)
     {
         return mb_strlen(json_encode($object));
     }
 
+    /**
+     * @param $indexName
+     * @param $q
+     * @param $params
+     * @return mixed|null
+     */
     protected function searchWithDisjunctiveFaceting($indexName, $q, $params)
     {
         if (! is_array($params['disjunctiveFacets']) || count($params['disjunctiveFacets']) <= 0) {
@@ -727,6 +906,10 @@ class AlgoliaHelper extends AbstractHelper
         return $queryResults;
     }
 
+    /**
+     * @param $queryParams
+     * @return array
+     */
     protected function getDisjunctiveQueries($queryParams)
     {
         $queriesParams = [];
@@ -757,6 +940,11 @@ class AlgoliaHelper extends AbstractHelper
         return $queriesParams;
     }
 
+    /**
+     * @param $filters
+     * @param $needle
+     * @return mixed
+     */
     protected function getAlgoliaFiltersArrayWithoutCurrentRefinement($filters, $needle)
     {
         // iterate on each filters which can be string or array and filter out every refinement matching the needle
