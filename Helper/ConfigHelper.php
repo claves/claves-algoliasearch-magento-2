@@ -11,7 +11,9 @@ use Magento\Framework\Locale\Currency;
 use Magento\Framework\Serialize\SerializerInterface;
 use Magento\Store\Model\ScopeInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Magento\Customer\Api\GroupExcludedWebsiteRepositoryInterface;
 use Magento\Cookie\Helper\Cookie as CookieHelper;
+
 
 class ConfigHelper
 {
@@ -143,7 +145,6 @@ class ConfigHelper
     public const ENHANCED_QUEUE_ARCHIVE = 'algoliasearch_advanced/queue/enhanced_archive';
     public const NUMBER_OF_ELEMENT_BY_PAGE = 'algoliasearch_advanced/queue/number_of_element_by_page';
     public const ARCHIVE_LOG_CLEAR_LIMIT = 'algoliasearch_advanced/queue/archive_clear_limit';
-    public const MAX_VIRTUAL_REPLICA_COUNT = 50;
 
     /**
      * @var Magento\Framework\App\Config\ScopeConfigInterface
@@ -196,6 +197,11 @@ class ConfigHelper
     protected $groupCollection;
 
     /**
+     * @var GroupExcludedWebsiteRepositoryInterface
+     */
+    protected $groupExcludedWebsiteRepository;
+
+    /**
      * @var CookieHelper
      */
     protected $cookieHelper;
@@ -211,7 +217,9 @@ class ConfigHelper
      * @param Magento\Framework\Event\ManagerInterface $eventManager
      * @param SerializerInterface $serializer
      * @param GroupCollection $groupCollection
+     * @param GroupExcludedWebsiteRepositoryInterface $groupExcludedWebsiteRepository
      * @param CookieHelper $cookieHelper
+
      */
     public function __construct(
         Magento\Framework\App\Config\ScopeConfigInterface $configInterface,
@@ -224,6 +232,7 @@ class ConfigHelper
         Magento\Framework\Event\ManagerInterface          $eventManager,
         SerializerInterface                               $serializer,
         GroupCollection                                   $groupCollection,
+        GroupExcludedWebsiteRepositoryInterface           $groupExcludedWebsiteRepository,
         CookieHelper                                      $cookieHelper
     ) {
         $this->configInterface = $configInterface;
@@ -236,6 +245,7 @@ class ConfigHelper
         $this->eventManager = $eventManager;
         $this->serializer = $serializer;
         $this->groupCollection = $groupCollection;
+        $this->groupExcludedWebsiteRepository = $groupExcludedWebsiteRepository;
         $this->cookieHelper = $cookieHelper;
     }
 
@@ -1000,6 +1010,7 @@ class ConfigHelper
      * @param $currentCustomerGroupId
      * @param $attrs
      * @return array
+     * @throws Magento\Framework\Exception\LocalizedException
      * @throws Magento\Framework\Exception\NoSuchEntityException
      */
     public function getSortingIndices($originalIndexName, $storeId = null, $currentCustomerGroupId = null, $attrs = null)
@@ -1010,23 +1021,21 @@ class ConfigHelper
 
         $currency = $this->getCurrencyCode($storeId);
         $attributesToAdd = [];
-        $defaultVirtualReplicaEnabled = $this->useVirtualReplica($storeId);
-        $virtualReplicaCount = 0;
         foreach ($attrs as $key => $attr) {
-            if ($virtualReplicaCount < self::MAX_VIRTUAL_REPLICA_COUNT && ($defaultVirtualReplicaEnabled || (isset($attr['virtualReplica']) && $attr['virtualReplica']))){
-                $virtualReplica = 1;
-            } else {
-                $virtualReplica = 0;
-            }
             $indexName = false;
             $sortAttribute = false;
             if ($this->isCustomerGroupsEnabled($storeId) && $attr['attribute'] === 'price') {
+                $websiteId = (int)$this->storeManager->getStore($storeId)->getWebsiteId();
                 $groupCollection = $this->groupCollection;
                 if (!is_null($currentCustomerGroupId)) {
                     $groupCollection->addFilter('customer_group_id', $currentCustomerGroupId);
                 }
                 foreach ($groupCollection as $group) {
                     $customerGroupId = (int)$group->getData('customer_group_id');
+                    $excludedWebsites = $this->groupExcludedWebsiteRepository->getCustomerGroupExcludedWebsites($customerGroupId);
+                    if (in_array($websiteId, $excludedWebsites)) {
+                        continue;
+                    }
                     $groupIndexNameSuffix = 'group_' . $customerGroupId;
                     $groupIndexName =
                         $originalIndexName . '_' . $attr['attribute'] . '_' . $groupIndexNameSuffix . '_' . $attr['sort'];
@@ -1036,7 +1045,6 @@ class ConfigHelper
                     $newAttr['attribute'] = $attr['attribute'];
                     $newAttr['sort'] = $attr['sort'];
                     $newAttr['sortLabel'] = $attr['sortLabel'];
-                    $newAttr['virtualReplica'] = $virtualReplica;
                     if (!array_key_exists('label', $newAttr) && array_key_exists('sortLabel', $newAttr)) {
                         $newAttr['label'] = $newAttr['sortLabel'];
                     }
@@ -1052,7 +1060,6 @@ class ConfigHelper
                         'custom',
                     ];
                     $attributesToAdd[$newAttr['sort']][] = $newAttr;
-                    $virtualReplicaCount++;
                 }
             } elseif ($attr['attribute'] === 'price') {
                 $indexName = $originalIndexName . '_' . $attr['attribute'] . '_' . 'default' . '_' . $attr['sort'];
@@ -1063,7 +1070,6 @@ class ConfigHelper
             }
             if ($indexName && $sortAttribute) {
                 $attrs[$key]['name'] = $indexName;
-                $attrs[$key]['virtualReplica'] = $virtualReplica;
                 if (!array_key_exists('label', $attrs[$key]) && array_key_exists('sortLabel', $attrs[$key])) {
                     $attrs[$key]['label'] = $attrs[$key]['sortLabel'];
                 }
@@ -1078,7 +1084,6 @@ class ConfigHelper
                     'exact',
                     'custom',
                 ];
-                $virtualReplicaCount++;
             }
         }
         $attrsToReturn = [];
