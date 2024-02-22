@@ -33,7 +33,6 @@ use Magento\Framework\DataObject;
 use Magento\Framework\Event\ManagerInterface;
 use Magento\Store\Model\Store;
 use Magento\Store\Model\StoreManagerInterface;
-use Magento\Customer\Api\GroupExcludedWebsiteRepositoryInterface;
 
 class ProductHelper
 {
@@ -114,11 +113,6 @@ class ProductHelper
     protected $productAttributes;
 
     /**
-     * @var GroupExcludedWebsiteRepositoryInterface
-     */
-    protected $groupExcludedWebsiteRepository;
-
-    /**
      * @var string[]
      */
     protected $predefinedProductAttributes = [
@@ -172,7 +166,6 @@ class ProductHelper
      * @param Type $productType
      * @param CollectionFactory $productCollectionFactory
      * @param GroupCollection $groupCollection
-     * @param GroupExcludedWebsiteRepositoryInterface groupExcludedWebsiteRepository
      * @param ImageHelper $imageHelper
      */
     public function __construct(
@@ -185,15 +178,15 @@ class ProductHelper
         Visibility             $visibility,
         Stock                  $stockHelper,
         StockRegistryInterface $stockRegistry,
-        CurrencyHelper $currencyManager,
-        CategoryHelper $categoryHelper,
-        PriceManager $priceManager,
-        Type $productType,
-        CollectionFactory $productCollectionFactory,
-        GroupCollection $groupCollection,
-        GroupExcludedWebsiteRepositoryInterface $groupExcludedWebsiteRepository,
-        ImageHelper $imageHelper
-    ) {
+        CurrencyHelper         $currencyManager,
+        CategoryHelper         $categoryHelper,
+        PriceManager           $priceManager,
+        Type                   $productType,
+        CollectionFactory      $productCollectionFactory,
+        GroupCollection        $groupCollection,
+        ImageHelper            $imageHelper
+    )
+    {
         $this->eavConfig = $eavConfig;
         $this->configHelper = $configHelper;
         $this->algoliaHelper = $algoliaHelper;
@@ -209,7 +202,6 @@ class ProductHelper
         $this->productType = $productType;
         $this->productCollectionFactory = $productCollectionFactory;
         $this->groupCollection = $groupCollection;
-        $this->groupExcludedWebsiteRepository = $groupExcludedWebsiteRepository;
         $this->imageHelper = $imageHelper;
     }
 
@@ -464,13 +456,13 @@ class ProductHelper
 
         if ($this->configHelper->isInstantEnabled($storeId)) {
             $replicas = array_values(array_map(function ($sortingIndex) {
-                return $sortingIndex['name'];
+                return [$sortingIndex['name'],$sortingIndex['virtualReplica']];
             }, $sortingIndices));
         }
 
         // Managing Virtual Replica
         if ($this->configHelper->useVirtualReplica($storeId)) {
-           $replicas = $this->handleVirtualReplica($replicas);
+            $replicas = $this->handleVirtualReplica($replicas);
         }
 
         // Merge current replicas with sorting replicas to not delete A/B testing replica indices
@@ -490,24 +482,23 @@ class ProductHelper
             $this->logger->log('Setting replicas to "' . $indexName . '" index.');
             $this->logger->log('Replicas: ' . json_encode($replicas));
             $setReplicasTaskId = $this->algoliaHelper->getLastTaskId();
-            if (!$this->configHelper->useVirtualReplica($storeId)) {
-                foreach ($sortingIndices as $values) {
-                    $replicaName = $values['name'];
-                    $indexSettings['ranking'] = $values['ranking'];
-                    $this->algoliaHelper->setSettings($replicaName, $indexSettings, false, true);
-                    $this->logger->log('Setting settings to "' . $replicaName . '" replica.');
-                    $this->logger->log('Settings: ' . json_encode($indexSettings));
-                }
-            } else {
-                foreach ($sortingIndices as $values) {
+            foreach ($sortingIndices as $values) {
+                if ($values['virtualReplica']) {
                     $replicaName = $values['name'];
                     array_unshift($customRanking, $values['ranking'][0]);
                     $replicaSetting['customRanking'] = $customRanking;
                     $this->algoliaHelper->setSettings($replicaName, $replicaSetting, false, false);
                     $this->logger->log('Setting settings to "' . $replicaName . '" replica.');
                     $this->logger->log('Settings: ' . json_encode($replicaSetting));
+                } else {
+                    $replicaName = $values['name'];
+                    $indexSettings['ranking'] = $values['ranking'];
+                    $this->algoliaHelper->setSettings($replicaName, $indexSettings, false, true);
+                    $this->logger->log('Setting settings to "' . $replicaName . '" replica.');
+                    $this->logger->log('Settings: ' . json_encode($indexSettings));
                 }
             }
+
         } else {
             $this->algoliaHelper->setSettings($indexName, ['replicas' => []]);
             $this->logger->log('Removing replicas from "' . $indexName . '" index');
@@ -1062,7 +1053,7 @@ class ProductHelper
             }
 
             $attributeResource = $attributeResource->setData('store_id', $product->getStoreId());
-
+          
             $value = $product->getData($attributeName);
 
             if ($value !== null) {
@@ -1308,8 +1299,6 @@ class ProductHelper
     /**
      * @param $storeId
      * @return array
-     * @throws \Magento\Framework\Exception\LocalizedException
-     * @throws \Magento\Framework\Exception\NoSuchEntityException
      */
     protected function getAttributesForFaceting($storeId)
     {
@@ -1318,7 +1307,6 @@ class ProductHelper
         $currencies = $this->currencyManager->getConfigAllowCurrencies();
 
         $facets = $this->configHelper->getFacets($storeId);
-        $websiteId = (int)$this->storeManager->getStore($storeId)->getWebsiteId();
         foreach ($facets as $facet) {
             if ($facet['attribute'] === 'price') {
                 foreach ($currencies as $currency_code) {
@@ -1326,12 +1314,9 @@ class ProductHelper
 
                     if ($this->configHelper->isCustomerGroupsEnabled($storeId)) {
                         foreach ($this->groupCollection as $group) {
-                            $groupId = (int)$group->getData('customer_group_id');
-                            $excludedWebsites = $this->groupExcludedWebsiteRepository->getCustomerGroupExcludedWebsites($groupId);
-                            if (in_array($websiteId, $excludedWebsites)) {
-                                continue;
-                            }
-                            $attributesForFaceting[] = 'price.' . $currency_code . '.group_' . $groupId;
+                            $group_id = (int)$group->getData('customer_group_id');
+
+                            $attributesForFaceting[] = 'price.' . $currency_code . '.group_' . $group_id;
                         }
                     }
 
@@ -1550,9 +1535,13 @@ class ProductHelper
     {
         $virtualReplicaArray = [];
         foreach ($replicas as $replica) {
-            $virtualReplicaArray[] = 'virtual(' . $replica . ')';
+            if ($replica[1]) {
+                $replicaArray[] = 'virtual(' . $replica[0] . ')';
+            } else {
+                $replicaArray[] = $replica[0];
+            }
         }
-        return $virtualReplicaArray;
+        return $replicaArray;
     }
 
     /**
@@ -1567,7 +1556,7 @@ class ProductHelper
         $sortingIndices = $this->configHelper->getSortingIndices($indexName, $storeId, null, $sortingAttribute);
         if ($this->configHelper->isInstantEnabled($storeId)) {
             $replicas = array_values(array_map(function ($sortingIndex) {
-                return $sortingIndex['name'];
+                return [$sortingIndex['name'],$sortingIndex['virtualReplica']];
             }, $sortingIndices));
 
             try {

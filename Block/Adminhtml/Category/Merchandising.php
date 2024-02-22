@@ -6,15 +6,15 @@ use Algolia\AlgoliaSearch\Helper\ConfigHelper;
 use Algolia\AlgoliaSearch\Helper\Data;
 use Magento\Backend\Block\Template\Context;
 use Magento\Catalog\Model\Category;
-use Algolia\AlgoliaSearch\Registry\CurrentCategory;
+use Magento\Framework\Registry;
 
 class Merchandising extends \Magento\Backend\Block\Template
 {
     /** @var string */
     protected $_template = 'catalog/category/edit/merchandising.phtml';
 
-    /** @var CurrentCategory */
-    protected $currentCategory;
+    /** @var Registry */
+    protected $registry;
 
     /** @var ConfigHelper */
     private $configHelper;
@@ -27,19 +27,19 @@ class Merchandising extends \Magento\Backend\Block\Template
 
     /**
      * @param Context $context
-     * @param CurrentCategory $currentCategory
+     * @param Registry $registry
      * @param ConfigHelper $configHelper
      * @param Data $coreHelper
      * @param array $data
      */
     public function __construct(
         Context $context,
-        CurrentCategory $currentCategory,
+        Registry $registry,
         ConfigHelper $configHelper,
         Data $coreHelper,
         array $data = []
     ) {
-        $this->currentCategory = $currentCategory;
+        $this->registry = $registry;
         $this->configHelper = $configHelper;
         $this->coreHelper = $coreHelper;
         $this->storeManager = $context->getStoreManager();
@@ -50,7 +50,7 @@ class Merchandising extends \Magento\Backend\Block\Template
     /** @return Category | null */
     public function getCategory()
     {
-        return $this->currentCategory->get();
+        return $this->registry->registry('category');
     }
 
     /** @return bool */

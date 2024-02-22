@@ -3,27 +3,28 @@
 namespace Algolia\AlgoliaSearch\Block\Adminhtml\Job;
 
 use Magento\Backend\Block\Widget\Button;
-use Magento\Framework\Session\SessionManagerInterface;
+use Magento\Framework\Registry;
 use Magento\Framework\View\Element\Template;
 use Magento\Framework\View\Element\Template\Context;
 
 class View extends Template
 {
-    /** @var SessionManagerInterface */
-    protected $backendSession;
+    /** @var \Magento\Framework\Registry */
+    protected $coreRegistry;
 
     /**
-     * @param Context $context
-     * @param SessionManagerInterface $backendSession
-     * @param array $data
+     * @param Context       $context
+     * @param Registry      $coreRegistry
+     * @param array         $data
      */
     public function __construct(
-        Context          $context,
-        SessionManagerInterface   $backendSession,
+        Context       $context,
+        Registry      $coreRegistry,
         array $data = []
     ) {
         parent::__construct($context, $data);
-        $this->backendSession = $backendSession;
+
+        $this->coreRegistry = $coreRegistry;
     }
 
     /** @inheritdoc */
@@ -47,7 +48,7 @@ class View extends Template
     /** @return \Algolia\AlgoliaSearch\Model\Job */
     public function getCurrentJob()
     {
-        return $this->backendSession->getData('current_job');
+        return $this->coreRegistry->registry('current_job');
     }
 
     /**  @return string */

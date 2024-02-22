@@ -6,15 +6,15 @@ use Algolia\AlgoliaSearch\Helper\ConfigHelper;
 use Algolia\AlgoliaSearch\Helper\Data;
 use Algolia\AlgoliaSearch\Model\Query;
 use Magento\Backend\Block\Template\Context;
-use Magento\Framework\Session\SessionManagerInterface;
+use Magento\Framework\Registry;
 
 class Merchandising extends \Magento\Backend\Block\Template
 {
     /** @var string */
     protected $_template = 'query/edit/merchandising.phtml';
 
-    /** @var SessionManagerInterface */
-    protected $backendSession;
+    /** @var Registry */
+    protected $registry;
 
     /** @var ConfigHelper */
     private $configHelper;
@@ -27,19 +27,19 @@ class Merchandising extends \Magento\Backend\Block\Template
 
     /**
      * @param Context $context
-     * @param SessionManagerInterface $backendSession
+     * @param Registry $registry
      * @param ConfigHelper $configHelper
      * @param Data $coreHelper
      * @param array $data
      */
     public function __construct(
         Context $context,
-        SessionManagerInterface $backendSession,
+        Registry $registry,
         ConfigHelper $configHelper,
         Data $coreHelper,
         array $data = []
     ) {
-        $this->backendSession = $backendSession;
+        $this->registry = $registry;
         $this->configHelper = $configHelper;
         $this->coreHelper = $coreHelper;
         $this->storeManager = $context->getStoreManager();
@@ -50,7 +50,7 @@ class Merchandising extends \Magento\Backend\Block\Template
     /** @return Query | null */
     public function getCurrentQuery()
     {
-        return $this->backendSession->getData('algoliasearch_query');
+        return $this->registry->registry('algoliasearch_query');
     }
 
     /** @return ConfigHelper */
