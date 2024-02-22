@@ -5,13 +5,13 @@ namespace Algolia\AlgoliaSearch\Controller\Adminhtml\Queue;
 use Algolia\AlgoliaSearch\Model\JobFactory;
 use Algolia\AlgoliaSearch\Model\ResourceModel\Job as JobResourceModel;
 use Magento\Backend\App\Action\Context;
-use Magento\Framework\Session\SessionManagerInterface;
+use Magento\Framework\Registry;
 use Magento\Indexer\Model\IndexerFactory;
 
 abstract class AbstractAction extends \Magento\Backend\App\Action
 {
-    /** @var SessionManagerInterface */
-    protected $backendSession;
+    /** @var Registry */
+    protected $coreRegistry;
 
     /** @var \Algolia\AlgoliaSearch\Model\JobFactory */
     protected $jobFactory;
@@ -24,21 +24,21 @@ abstract class AbstractAction extends \Magento\Backend\App\Action
 
     /**
      * @param Context          $context
-     * @param SessionManagerInterface          $backendSession
+     * @param Registry         $coreRegistry
      * @param JobFactory       $jobFactory
      * @param JobResourceModel $jobResourceModel
      * @param IndexerFactory   $indexerFactory
      */
     public function __construct(
         Context $context,
-        SessionManagerInterface $backendSession,
+        Registry $coreRegistry,
         JobFactory $jobFactory,
         JobResourceModel $jobResourceModel,
         IndexerFactory $indexerFactory
     ) {
         parent::__construct($context);
 
-        $this->backendSession   = $backendSession;
+        $this->coreRegistry     = $coreRegistry;
         $this->jobFactory       = $jobFactory;
         $this->jobResourceModel = $jobResourceModel;
         $this->indexerFactory   = $indexerFactory;
@@ -68,7 +68,7 @@ abstract class AbstractAction extends \Magento\Backend\App\Action
         }
 
         // Register model to use later in blocks
-        $this->backendSession->setData('current_job', $model);
+        $this->coreRegistry->register('current_job', $model);
 
         return $model;
     }

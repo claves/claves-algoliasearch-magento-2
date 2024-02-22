@@ -6,15 +6,15 @@ use Algolia\AlgoliaSearch\Helper\ConfigHelper;
 use Algolia\AlgoliaSearch\Helper\Data;
 use Algolia\AlgoliaSearch\Model\LandingPage;
 use Magento\Backend\Block\Template\Context;
-use Magento\Framework\Session\SessionManagerInterface;
+use Magento\Framework\Registry;
 
 class SearchConfiguration extends \Magento\Backend\Block\Template
 {
     /** @var string */
     protected $_template = 'landingpage/search-configuration.phtml';
 
-    /** @var SessionManagerInterface */
-    protected $backendSession;
+    /** @var Registry */
+    protected $registry;
 
     /** @var ConfigHelper */
     private $configHelper;
@@ -27,19 +27,19 @@ class SearchConfiguration extends \Magento\Backend\Block\Template
 
     /**
      * @param Context $context
-     * @param SessionManagerInterface $backendSession
+     * @param Registry $registry
      * @param ConfigHelper $configHelper
      * @param Data $coreHelper
      * @param array $data
      */
     public function __construct(
         Context $context,
-        SessionManagerInterface $backendSession,
+        Registry $registry,
         ConfigHelper $configHelper,
         Data $coreHelper,
         array $data = []
     ) {
-        $this->backendSession = $backendSession;
+        $this->registry = $registry;
         $this->configHelper = $configHelper;
         $this->coreHelper = $coreHelper;
 
@@ -49,7 +49,7 @@ class SearchConfiguration extends \Magento\Backend\Block\Template
     /** @return LandingPage | null */
     public function getLandingPage()
     {
-        return $this->backendSession->getData('algoliasearch_landing_page');
+        return $this->registry->registry('algoliasearch_landing_page');
     }
 
     /** @return ConfigHelper */

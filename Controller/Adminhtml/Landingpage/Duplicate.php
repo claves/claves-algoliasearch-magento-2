@@ -35,7 +35,8 @@ class Duplicate extends AbstractAction
         try {
             $newLandingPage->getResource()->save($newLandingPage);
             $this->copyQueryRules($landingPage->getId(), $newLandingPage->getId());
-            $this->backendSession->setData('algoliasearch_landing_page', $newLandingPage);
+
+            $this->coreRegistry->register('algoliasearch_landing_page', $newLandingPage);
             $this->messageManager->addSuccessMessage(__('The duplicated landing page has been saved.'));
 
             return $resultRedirect->setPath('*/*/edit', ['id' => $newLandingPage->getId()]);
