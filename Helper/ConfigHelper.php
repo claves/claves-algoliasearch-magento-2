@@ -133,7 +133,6 @@ class ConfigHelper
     protected const IS_ADDTOCART_ENABLED_IN_FREQUENTLY_BOUGHT_TOGETHER = 'algoliasearch_recommend/recommend/frequently_bought_together/is_addtocart_enabled';
     protected const IS_ADDTOCART_ENABLED_IN_RELATED_PRODUCTS = 'algoliasearch_recommend/recommend/related_product/is_addtocart_enabled';
     protected const IS_ADDTOCART_ENABLED_IN_TRENDS_ITEM = 'algoliasearch_recommend/recommend/trends_item/is_addtocart_enabled';
-    protected const USE_VIRTUAL_REPLICA_ENABLED = 'algoliasearch_instant/instant/use_virtual_replica';
     protected const AUTOCOMPLETE_KEYBORAD_NAVIAGATION = 'algoliasearch_autocomplete/autocomplete/navigator';
     protected const FREQUENTLY_BOUGHT_TOGETHER_TITLE = 'algoliasearch_recommend/recommend/frequently_bought_together/title';
     protected const RELATED_PRODUCTS_TITLE = 'algoliasearch_recommend/recommend/related_product/title';
@@ -143,7 +142,7 @@ class ConfigHelper
     public const ENHANCED_QUEUE_ARCHIVE = 'algoliasearch_advanced/queue/enhanced_archive';
     public const NUMBER_OF_ELEMENT_BY_PAGE = 'algoliasearch_advanced/queue/number_of_element_by_page';
     public const ARCHIVE_LOG_CLEAR_LIMIT = 'algoliasearch_advanced/queue/archive_clear_limit';
-    public const MAX_VIRTUAL_REPLICA_COUNT = 50;
+    public const MAX_VIRTUAL_REPLICA_COUNT = 20;
 
     /**
      * @var Magento\Framework\App\Config\ScopeConfigInterface
@@ -1010,10 +1009,9 @@ class ConfigHelper
 
         $currency = $this->getCurrencyCode($storeId);
         $attributesToAdd = [];
-        $defaultVirtualReplicaEnabled = $this->useVirtualReplica($storeId);
         $virtualReplicaCount = 0;
         foreach ($attrs as $key => $attr) {
-            if ($virtualReplicaCount < self::MAX_VIRTUAL_REPLICA_COUNT && ($defaultVirtualReplicaEnabled || (isset($attr['virtualReplica']) && $attr['virtualReplica']))){
+            if ($virtualReplicaCount < self::MAX_VIRTUAL_REPLICA_COUNT && (isset($attr['virtualReplica']) && $attr['virtualReplica'])){
                 $virtualReplica = 1;
             } else {
                 $virtualReplica = 0;
@@ -1780,17 +1778,6 @@ class ConfigHelper
     {
         return $this->configInterface->getValue(
             self::MAGENTO_DEFAULT_CACHE_TIME,
-            ScopeInterface::SCOPE_STORE,
-            $storeId
-        );
-    }
-
-    /**
-     * @param $storeId
-     * @return mixed
-     */
-    public function useVirtualReplica($storeId = null) {
-        return $this->configInterface->isSetFlag(self::USE_VIRTUAL_REPLICA_ENABLED,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
