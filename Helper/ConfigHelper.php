@@ -1108,6 +1108,23 @@ class ConfigHelper
     }
 
     /**
+     * @param $replica
+     * @return array
+     */
+    public function handleVirtualReplica($replicas)
+    {
+        $replicaArray = [];
+        foreach ($replicas as $replica) {
+            if ($replica[1]) {
+                $replicaArray[] = 'virtual(' . $replica[0] . ')';
+            } else {
+                $replicaArray[] = $replica[0];
+            }
+        }
+        return $replicaArray;
+    }
+
+    /**
      * @param $storeId
      * @return mixed
      */
@@ -1781,6 +1798,20 @@ class ConfigHelper
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
+    }
+
+    /**
+     * @param $storeId
+     * @return mixed
+     */
+    public function useVirtualReplica($storeId = null) {
+        $sortingConfig = $this->unserialize($this->getRawSortingValue($storeId));
+        foreach ($sortingConfig as $key => $attr) {
+            if($attr['virtualReplica'] == 1) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
