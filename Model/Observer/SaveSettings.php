@@ -10,6 +10,7 @@ use Algolia\AlgoliaSearch\Model\IndicesConfigurator;
 use Magento\Framework\Event\Observer;
 use Magento\Framework\Event\ObserverInterface;
 use Magento\Store\Model\StoreManagerInterface;
+use Algolia\AlgoliaSearch\Service\ConfigDataStorage;
 
 class SaveSettings implements ObserverInterface
 {
@@ -35,24 +36,32 @@ class SaveSettings implements ObserverInterface
     protected $productHelper;
 
     /**
+     * @var ConfigDataStorage
+     */
+    protected $configDataStorage;
+
+    /**
      * @param StoreManagerInterface $storeManager
      * @param IndicesConfigurator $indicesConfigurator
      * @param AlgoliaHelper $algoliaHelper
      * @param Data $helper
      * @param ProductHelper $productHelper
+     * @param ConfigDataStorage $configDataStorage
      */
     public function __construct(
         StoreManagerInterface $storeManager,
         IndicesConfigurator $indicesConfigurator,
         AlgoliaHelper $algoliaHelper,
         Data $helper,
-        ProductHelper $productHelper
+        ProductHelper $productHelper,
+        ConfigDataStorage $configDataStorage
     ) {
         $this->storeManager = $storeManager;
         $this->indicesConfigurator = $indicesConfigurator;
         $this->algoliaHelper = $algoliaHelper;
         $this->helper = $helper;
         $this->productHelper = $productHelper;
+        $this->configDataStorage = $configDataStorage;
     }
 
     /**
@@ -63,7 +72,14 @@ class SaveSettings implements ObserverInterface
     public function execute(Observer $observer)
     {
          try {
-            $storeIds = array_keys($this->storeManager->getStores());
+             $storeIds = array_keys($this->storeManager->getStores());
+             $oldSortConfigValue = $this->configDataStorage->getValueAndReset('sort_config');
+             if ($oldSortConfigValue) {
+                 foreach ($storeIds as $storeId) {
+                     $indexName = $this->helper->getIndexName($this->productHelper->getIndexNameSuffix(), $storeId);
+                     $this->productHelper->handlingReplica($indexName, $storeId, $oldSortConfigValue);
+                 }
+             }
             foreach ($storeIds as $storeId) {
                 $this->indicesConfigurator->saveConfigurationToAlgolia($storeId);
             }

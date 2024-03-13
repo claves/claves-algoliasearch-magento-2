@@ -1006,7 +1006,6 @@ class ConfigHelper
         if (!$attrs){
             $attrs = $this->getSorting($storeId);
         }
-
         $currency = $this->getCurrencyCode($storeId);
         $attributesToAdd = [];
         $virtualReplicaCount = 0;

@@ -1531,9 +1531,9 @@ class ProductHelper
      * @param $replica
      * @return array
      */
-    public function handleVirtualReplica($replicas, $indexName, $storeId)
+    public function handleVirtualReplica($replicas)
     {
-        $virtualReplicaArray = [];
+        $replicaArray = [];
         foreach ($replicas as $replica) {
             if ($replica[1]) {
                 $replicaArray[] = 'virtual(' . $replica[0] . ')';
@@ -1553,22 +1553,33 @@ class ProductHelper
      * @throws \Magento\Framework\Exception\NoSuchEntityException
      */
     public function handlingReplica($indexName, $storeId, $sortingAttribute = false) {
+        /*In Progress*/
         $sortingIndices = $this->configHelper->getSortingIndices($indexName, $storeId, null, $sortingAttribute);
+        $newSortingIndices = $this->configHelper->getSortingIndices($indexName, $storeId, null);
         if ($this->configHelper->isInstantEnabled($storeId)) {
             $replicas = array_values(array_map(function ($sortingIndex) {
                 return [$sortingIndex['name'],$sortingIndex['virtualReplica']];
             }, $sortingIndices));
 
-            try {
-                $replicas = $this->handleVirtualReplica($replicas, $indexName, $storeId);
+            $replicasUpdated = array_values(array_map(function ($sortingIndex) {
+                return [$sortingIndex['name'],$sortingIndex['virtualReplica']];
+            }, $newSortingIndices));
 
+
+            try {
+                $replicas = $this->handleVirtualReplica($replicas);
+                $replicasUpdated = $this->handleVirtualReplica($replicasUpdated);
+                $replicaNeedToRemove = array_diff($replicas,$replicasUpdated);
+
+                $replicasRequiredAfterUpdate = array_intersect($replicas,$replicasUpdated);
                 $currentSettings = $this->algoliaHelper->getSettings($indexName);
                 if (is_array($currentSettings) && array_key_exists('replicas', $currentSettings)) {
                     $replicasRequired = array_values(array_diff_assoc($currentSettings['replicas'], $replicas));
+                    $replicasRequired = array_merge($replicasRequiredAfterUpdate, $replicasRequired);
                     $this->algoliaHelper->setSettings($indexName, ['replicas' => $replicasRequired]);
                     $setReplicasTaskId = $this->algoliaHelper->getLastTaskId();
                     $this->algoliaHelper->waitLastTask($indexName, $setReplicasTaskId);
-                    if (count($replicas) > 0) {
+                    if (count($replicaNeedToRemove) > 0) {
                         foreach ($replicas as $replicaIndex) {
                             $this->algoliaHelper->deleteIndex($replicaIndex);
                         }
