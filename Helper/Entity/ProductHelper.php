@@ -1565,22 +1565,21 @@ class ProductHelper
                 return [$sortingIndex['name'],$sortingIndex['virtualReplica']];
             }, $newSortingIndices));
 
+            $createdAndDeletedReplicaList = $this->getUpdateReplicaList($replicas, $replicasUpdated);
 
             try {
                 $replicas = $this->handleVirtualReplica($replicas);
-                $replicasUpdated = $this->handleVirtualReplica($replicasUpdated);
-                $replicaNeedToRemove = array_diff($replicas,$replicasUpdated);
-
-                $replicasRequiredAfterUpdate = array_intersect($replicas,$replicasUpdated);
+                $replicasUpdatedOne = $this->handleVirtualReplica($replicasUpdated);
                 $currentSettings = $this->algoliaHelper->getSettings($indexName);
                 if (is_array($currentSettings) && array_key_exists('replicas', $currentSettings)) {
                     $replicasRequired = array_values(array_diff_assoc($currentSettings['replicas'], $replicas));
-                    $replicasRequired = array_merge($replicasRequiredAfterUpdate, $replicasRequired);
+                    $replicasRequired = array_diff($replicasRequired, $createdAndDeletedReplicaList);
+                    $replicasRequired = array_merge($replicasRequired, $replicasUpdatedOne);
                     $this->algoliaHelper->setSettings($indexName, ['replicas' => $replicasRequired]);
                     $setReplicasTaskId = $this->algoliaHelper->getLastTaskId();
                     $this->algoliaHelper->waitLastTask($indexName, $setReplicasTaskId);
-                    if (count($replicaNeedToRemove) > 0) {
-                        foreach ($replicas as $replicaIndex) {
+                    if (count($createdAndDeletedReplicaList) > 0) {
+                        foreach ($createdAndDeletedReplicaList as $replicaIndex) {
                             $this->algoliaHelper->deleteIndex($replicaIndex);
                         }
                     }
@@ -1593,5 +1592,19 @@ class ProductHelper
             }
         }
         return true;
+    }
+
+    public function getUpdateReplicaList($replicas, $replicasUpdated) {
+        if (count($replicas) > count($replicasUpdated)) {
+            $updatedReplicaList = array_diff_key($replicas, $replicasUpdated);
+        } else {
+            $updatedReplicaList = array_diff_key($replicasUpdated, $replicas);
+        }
+        $replicaArray =array();
+        foreach ($updatedReplicaList as $replica){
+            $replicaArray[] = 'virtual(' . $replica[0] . ')';
+            $replicaArray[] = $replica[0];
+        }
+        return $replicaArray;
     }
 }
