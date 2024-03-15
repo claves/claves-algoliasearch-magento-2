@@ -1557,14 +1557,8 @@ class ProductHelper
         $sortingIndices = $this->configHelper->getSortingIndices($indexName, $storeId, null, $sortingAttribute);
         $newSortingIndices = $this->configHelper->getSortingIndices($indexName, $storeId, null);
         if ($this->configHelper->isInstantEnabled($storeId)) {
-            $replicas = array_values(array_map(function ($sortingIndex) {
-                return [$sortingIndex['name'],$sortingIndex['virtualReplica']];
-            }, $sortingIndices));
-
-            $replicasUpdated = array_values(array_map(function ($sortingIndex) {
-                return [$sortingIndex['name'],$sortingIndex['virtualReplica']];
-            }, $newSortingIndices));
-
+            $replicas = $this->replicaSortingIndices($sortingIndices);
+            $replicasUpdated = $this->replicaSortingIndices($newSortingIndices);
             $createdAndDeletedReplicaList = $this->getUpdateReplicaList($replicas, $replicasUpdated);
 
             try {
@@ -1573,14 +1567,17 @@ class ProductHelper
                 $currentSettings = $this->algoliaHelper->getSettings($indexName);
                 if (is_array($currentSettings) && array_key_exists('replicas', $currentSettings)) {
                     $replicasRequired = array_values(array_diff_assoc($currentSettings['replicas'], $replicas));
+                    $replicasRequired = array_merge($replicasRequired, array_intersect($replicas, $replicasUpdatedOne));
                     $replicasRequired = array_diff($replicasRequired, $createdAndDeletedReplicaList);
-                    $replicasRequired = array_merge($replicasRequired, $replicasUpdatedOne);
                     $this->algoliaHelper->setSettings($indexName, ['replicas' => $replicasRequired]);
                     $setReplicasTaskId = $this->algoliaHelper->getLastTaskId();
                     $this->algoliaHelper->waitLastTask($indexName, $setReplicasTaskId);
-                    if (count($createdAndDeletedReplicaList) > 0) {
-                        foreach ($createdAndDeletedReplicaList as $replicaIndex) {
-                            $this->algoliaHelper->deleteIndex($replicaIndex);
+                    $deletedReplicaIndicesList = array_values(array_diff_assoc($currentSettings['replicas'], $replicasRequired));
+                    if (count($deletedReplicaIndicesList) > 0) {
+                        foreach ($deletedReplicaIndicesList as $replicaIndex) {
+                            //if (in_array($replicaIndex, $currentSettings['replicas'])){
+                                $this->algoliaHelper->deleteIndex($replicaIndex);
+                            //}
                         }
                     }
                 }
@@ -1594,6 +1591,11 @@ class ProductHelper
         return true;
     }
 
+    /**
+     * @param $replicas
+     * @param $replicasUpdated
+     * @return array
+     */
     public function getUpdateReplicaList($replicas, $replicasUpdated) {
         if (count($replicas) > count($replicasUpdated)) {
             $updatedReplicaList = array_diff_key($replicas, $replicasUpdated);
@@ -1606,5 +1608,16 @@ class ProductHelper
             $replicaArray[] = $replica[0];
         }
         return $replicaArray;
+    }
+
+    /**
+     * @param $sortingIndices
+     * @return array
+     */
+    public function replicaSortingIndices($sortingIndices)
+    {
+        return array_values(array_map(function ($sortingIndex) {
+            return [$sortingIndex['name'],$sortingIndex['virtualReplica']];
+        }, $sortingIndices));
     }
 }
