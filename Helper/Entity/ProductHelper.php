@@ -738,20 +738,6 @@ class ProductHelper
         return $customData;
     }
 
-    protected function getCategoryPaths($product, $category)
-    {
-        $category->getUrlInstance()->setStore($product->getStoreId());
-        $path = [];
-
-        foreach ($category->getPathIds() as $treeCategoryId) {
-            $name = $this->categoryHelper->getCategoryName($treeCategoryId, $storeId);
-            if ($name) {
-                $categoryIds[] = $treeCategoryId;
-                $path[] = $name;
-            }
-        }
-    }
-
     /**
      * A category should only be indexed if in the path of the current store and has a valid name.
      *
