@@ -130,6 +130,8 @@ class ConfigHelper
     protected const NUM_OF_TRENDING_ITEMS = 'algoliasearch_recommend/recommend/trends_item/num_of_trending_items';
     protected const TREND_ITEMS_FACET_NAME = 'algoliasearch_recommend/recommend/trends_item/facet_name';
     protected const TREND_ITEMS_FACET_VALUE = 'algoliasearch_recommend/recommend/trends_item/facet_value';
+    protected const IS_LOOKING_SIMILAR_ENABLED_ON_PDP = 'algoliasearch_recommend/recommend/looking_similar/is_looking_similar_enabled_on_pdp';
+    protected const IS_LOOKING_SIMILAR_ENABLED_ON_SHOPPING_CART = 'algoliasearch_recommend/recommend/looking_similar/is_looking_similar_enabled_on_cart_page';
     protected const IS_TREND_ITEMS_ENABLED_IN_PDP = 'algoliasearch_recommend/recommend/trends_item/is_trending_items_enabled_on_pdp';
     protected const IS_TREND_ITEMS_ENABLED_IN_SHOPPING_CART = 'algoliasearch_recommend/recommend/trends_item/is_trending_items_enabled_on_cart_page';
     protected const IS_ADDTOCART_ENABLED_IN_FREQUENTLY_BOUGHT_TOGETHER = 'algoliasearch_recommend/recommend/frequently_bought_together/is_addtocart_enabled';
@@ -826,6 +828,34 @@ class ConfigHelper
     {
         return $this->configInterface->getValue(
             self::TREND_ITEMS_FACET_VALUE,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * Determines whether Looking Similar enabled on PDP
+     *
+     * @param $storeId
+     * @return int
+     */
+    public function isLookingSimilarEnabledOnPDP($storeId = null)
+    {
+        return (int)$this->configInterface->getValue(
+            self::IS_LOOKING_SIMILAR_ENABLED_ON_PDP,
+            ScopeInterface::SCOPE_STORE,
+            $storeId
+        );
+    }
+
+    /**
+     * @param $storeId
+     * @return int
+     */
+    public function isLookingSimilarEnabledOnShoppingCart($storeId = null)
+    {
+        return (int)$this->configInterface->getValue(
+            self::IS_LOOKING_SIMILAR_ENABLED_ON_SHOPPING_CART,
             ScopeInterface::SCOPE_STORE,
             $storeId
         );
