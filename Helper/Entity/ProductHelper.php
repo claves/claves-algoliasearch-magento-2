@@ -1237,7 +1237,7 @@ class ProductHelper
             $value = $attributeResource->getFrontend()->getValue($product);
         }
 
-        if ($value !== null) {
+        if ($value !== null && $value !== false) {
             $customData[$attribute['attribute']] = $value;
         }
 
